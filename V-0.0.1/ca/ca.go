@@ -15,6 +15,9 @@ func CreatePKIFolders(caName string) (string, error) {
 	intermediateCaName := "intermediate-" + caName
 	caPath := rootPath + caName
 	intermediateCAPath := caPath + "/" + intermediateCaName
+	certsFolderPath := intermediateCAPath + "/certs"
+	csrFOlderPath := intermediateCAPath + "/csr"
+	crlFolderPath := intermediateCAPath + "/crl"
 	fmt.Printf("folder path: %v\n", caPath)
 	infoDir, err := os.Stat(caPath)
 
@@ -39,6 +42,26 @@ func CreatePKIFolders(caName string) (string, error) {
 			log.Fatalf("Can't intermediate ca folder %v: %d", intermediateCAPath, err)
 			return "", err
 		}
+		err = os.MkdirAll(intermediateCAPath, 0700)
+		if err != nil {
+			log.Fatalf("Can't intermediate ca folder %v: %d", intermediateCAPath, err)
+			return "", err
+		}
+		err = os.MkdirAll(certsFolderPath, 0700)
+		if err != nil {
+			log.Fatalf("Can't certs ca folder %v: %d", certsFolderPath, err)
+			return "", err
+		}
+		err = os.MkdirAll(csrFOlderPath, 0700)
+		if err != nil {
+			log.Fatalf("Can't crs ca folder %v: %d", csrFOlderPath, err)
+			return "", err
+		}
+		err = os.MkdirAll(crlFolderPath, 0700)
+		if err != nil {
+			log.Fatalf("Can't crl folder %v: %d", crlFolderPath, err)
+			return "", err
+		}
 
 	}
 	caPathName = fmt.Sprintf("CA path: %s | Intermediate CA path: %s", caPath, intermediateCAPath)
@@ -47,7 +70,7 @@ func CreatePKIFolders(caName string) (string, error) {
 
 // main to validade
 func main() {
-	caName := "CA-6"
+	caName := "CA-8"
 	caPathName, err := CreatePKIFolders(caName)
 	if err != nil {
 		log.Fatalf("Error creating CA: %v", err)
