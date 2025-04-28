@@ -5,34 +5,52 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 )
 
 // Creates folders and files structure
-func CreateCA(caName string) (caPathName string) {
+func CreatePKIFolders(caName string) (string, error) {
 
-	intermediateCA := []string{"intermediate-", caName}
-	caPath := []string{"/home/alvaro/srv/CA/", caName}
-	intermediateCAPath := strings.Join(caPath, "") + "/" + strings.Join(intermediateCA, "")
+	var caPathName string
+	rootPath := "/home/alvaro/srv/CA/"
+	intermediateCaName := "intermediate-" + caName
+	caPath := rootPath + caName
+	intermediateCAPath := caPath + "/" + intermediateCaName
+	fmt.Printf("folder path: %v\n", caPath)
+	infoDir, err := os.Stat(caPath)
 
-	err := os.MkdirAll(caPath[0], 06000)
-	if err != nil {
-		log.Fatalf("can't create ca folder %v: %d", caPath, err)
+	if err == nil {
+
+		if infoDir.IsDir() {
+			log.Fatalf("CA folder already exists %v: %d", caPath, err)
+			return "", err
+		}
+
+	} else {
+
+		fmt.Printf("Creating CA Folder %s ...\n", caPath)
+
+		err = os.MkdirAll(caPath, 0700)
+		if err != nil {
+			log.Fatalf("Can't create ca folder %v: %d", caPath, err)
+			return "", err
+		}
+		err = os.MkdirAll(intermediateCAPath, 0700)
+		if err != nil {
+			log.Fatalf("Can't intermediate ca folder %v: %d", intermediateCAPath, err)
+			return "", err
+		}
+
 	}
-
-	err = os.MkdirAll(intermediateCAPath, 07770)
-	if err != nil {
-		log.Fatalf("can't create intermediate ca folder %v: %d", caPath, err)
-	}
-
-	caPathName = fmt.Sprintf("CA path: %s, Intermediate CA path: %s", caPath, intermediateCAPath)
-
-	return caPathName
+	caPathName = fmt.Sprintf("CA path: %s | Intermediate CA path: %s", caPath, intermediateCAPath)
+	return caPathName, nil
 }
 
 // main to validade
 func main() {
-	caName := "EMPRESA"
-	caPathName := CreateCA(caName)
+	caName := "CA-6"
+	caPathName, err := CreatePKIFolders(caName)
+	if err != nil {
+		log.Fatalf("Error creating CA: %v", err)
+	}
 	log.Printf("CA path: %s", caPathName)
 }
