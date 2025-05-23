@@ -356,7 +356,7 @@ func main() {
 	country := "BR"
 	state := "Distrito Federal"
 	local := "Brasilia"
-	organization := "CA-10"
+	organization := "CA-01"
 	organizationalUnit := "Authority"
 
 	createConfigFiles(caPathName, country, state, local, organization, organizationalUnit)
