@@ -1,5 +1,5 @@
 // Implements ca basics apis
-package main
+package ca
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ import (
 )
 
 // Creates folders and files structure
-func createPKIFolders(caName string) (string, string, error) {
+func CreatePKIFolders(caName string) (string, string, error) {
 
 	rootPath := "/home/alvaro/srv/CA/"
 	intermediateCaName := "intermediateCA"
@@ -72,7 +72,7 @@ func createPKIFolders(caName string) (string, string, error) {
 }
 
 // create cnf files to PKI
-func createConfigFiles(caPath string, country string, state string, local string, organization string, organizationalUnit string) (string, error) {
+func CreateConfigFiles(caPath string, country string, state string, local string, organization string, organizationalUnit string) (string, error) {
 
 	// structure that store cnf config parameters
 	type config struct {
@@ -155,14 +155,17 @@ func createConfigFiles(caPath string, country string, state string, local string
 
 	//create config file
 	// Parse the templateCA file
-	tmplCAConfig, err := template.ParseFiles("templates/ca-cnf.txt")
+	wd, _ := os.Getwd()
+	log.Printf("Current working directory: %s\n", wd)
+
+	tmplCAConfig, err := template.ParseFiles("../ca/templates/ca-cnf.txt")
 	if err != nil {
 		log.Fatalf("Error parsing template: %v", err)
 		return "", err
 	}
 
 	// Parse the template IntermediateCA file
-	tmplIntCAConfig, err := template.ParseFiles("templates/intermediateCA-cnf.txt")
+	tmplIntCAConfig, err := template.ParseFiles("../ca/templates/intermediateCA-cnf.txt")
 	if err != nil {
 		log.Fatalf("Error parsing template: %v", err)
 		return "", err
@@ -235,7 +238,7 @@ func getCAInfo() (string, string, error) {
 }
 
 // Creates CA certificate, private key and public key
-func createCACertificate(caPathName string) (string, error) {
+func CreateCACertificate(caPathName string) (string, error) {
 	caCertificate := caPathName + "/ca.crt"
 	caPrivateKey := caPathName + "/ca.key"
 	caConfigFIle := caPathName + "/ca.cnf"
@@ -291,7 +294,7 @@ func createCACertificate(caPathName string) (string, error) {
 
 //Issue a server certificate
 
-func issueServerCertificate(ServerName string, csr io.Reader) (string, error) {
+func IssueServerCertificate(ServerName string, csr io.Reader) (string, error) {
 
 	fmt.Printf("getting CA information ...\n")
 	_, fintCAPath, err := getCAInfo()
@@ -341,6 +344,7 @@ func issueServerCertificate(ServerName string, csr io.Reader) (string, error) {
 	return string(serverCertinfo), nil
 }
 
+/*
 // main to validade
 func main() {
 	caName := "CA-01"
@@ -386,3 +390,4 @@ func main() {
 	log.Printf("Server certificate created! %s\n", serverCert)
 
 }
+*/

@@ -3,12 +3,16 @@ package main
 // Web interface application to manager PKI
 
 import (
+	"fmt"
 	"html/template"
 	"log"
 	"log/syslog"
 	"net/http"
 	"os"
+	"strings"
 	"time"
+
+	"github.com/thuatus/EnterpriteCA/tree/main/V-0.0.1/ca"
 )
 
 type Middleware func(http.HandlerFunc) http.HandlerFunc
@@ -42,7 +46,7 @@ func checkInitialSettings() (bool, error) {
 	// Check if the initial settings are set
 	// If not, return false and an error
 	// If yes, return true and nil
-	_, err := os.Stat("/home/alvaro/srv/CA/CA-02/index.txt")
+	_, err := os.Stat("/home/alvaro/srv/CA/")
 	if os.IsNotExist(err) {
 		return false, err
 	}
@@ -90,6 +94,61 @@ func FormInitialSettings(w http.ResponseWriter, _ *http.Request) {
 	}
 }
 
+func ApplyInitialSettings(w http.ResponseWriter, r *http.Request) {
+	// Apply the initial settings
+	// If not, return an error
+	// If yes, return nil
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Here you would process the form data and apply the initial settings
+	// For now, we will just log the form data
+	CaName := r.FormValue("ca_name")
+	CaFolderName := strings.ReplaceAll(CaName, " ", "_")
+	Country := r.FormValue("ca_country")
+	State := r.FormValue("ca_state")
+	Local := r.FormValue("ca_location")
+	Organization := r.FormValue("ca_organization")
+	OrganizationalUnit := r.FormValue("ca_ou")
+	RootDomain := r.FormValue("ca_root_domain")
+	log.Printf("Applying initial settings: CaName=%s, Country=%s, State=%s, Local=%s, Organization=%s, OrganizationalUnit=%s, RootDomain=%s",
+		CaName, Country, State, Local, Organization, OrganizationalUnit, RootDomain)
+
+	// Create the CA folders
+	// This is where you would create the necessary directories for the CA
+	caPathName, intermediateCaPathName, err := ca.CreatePKIFolders(CaFolderName)
+	if err != nil {
+		log.Println("Error creating PKI folders:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	log.Printf("Folders created: CA Path=%s, Intermediate CA Path=%s", caPathName, intermediateCaPathName)
+
+	// Create the CA configuration files
+	_, err = ca.CreateConfigFiles(caPathName, Country, State, Local, Organization, OrganizationalUnit)
+	if err != nil {
+		log.Println("Error creating config files:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	log.Println("Config files created successfully")
+
+	// Create CA certificate
+	_, err = ca.CreateCACertificate(caPathName)
+	if err != nil {
+		log.Println("Error creating CA certificate:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	fmt.Println("Initial settings applied successfully")
+
+	// Redirect to the main page or show a success message
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
 func main() {
 	// Create a new http.ServeMux
 	mux := http.NewServeMux()
@@ -101,7 +160,14 @@ func main() {
 			FormInitialSettings(w, r)
 			return
 		}
+
+		fmt.Println("Initial settings found, serving main page")
+		// http.ServeFile(w, r, "templates/index.html")
 	}))
+
+	// Register the form for initial settings
+	mux.Handle("/save_init_cfg/", Logging()(ApplyInitialSettings))
+
 	// Start the server
 	err := http.ListenAndServe(":8080", mux)
 	// Log the error if any
