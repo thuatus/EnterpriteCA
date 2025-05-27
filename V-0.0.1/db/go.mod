@@ -1,4 +1,4 @@
-module enterpriteca/enterpriteca/V-0.0.1/db
+module github.com/thuatus/EnterpriteCA/tree/main/V-0.0.1/db
 
 go 1.24.2
 

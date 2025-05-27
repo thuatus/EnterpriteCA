@@ -11,8 +11,10 @@ import (
 	"os"
 	"strings"
 	"time"
-	"github.com/thuatus/EnterpriteCA/tree/main/V-0.0.1/db"
+
 	"github.com/thuatus/EnterpriteCA/tree/main/V-0.0.1/ca"
+	"github.com/thuatus/EnterpriteCA/tree/main/V-0.0.1/db"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Middleware func(http.HandlerFunc) http.HandlerFunc
@@ -146,7 +148,9 @@ func ApplyInitialSettings(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Initial settings applied successfully")
 
 	// Redirect to the main page or show a success message
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	// http.Redirect(w, r, "/", http.StatusSeeOther)
+	http.ServeFile(w, r, "/static/first_login.html")
+	log.Println("Redirecting to first login page")
 }
 
 func createAdminUser(usr string, passwd string) error {
@@ -154,13 +158,57 @@ func createAdminUser(usr string, passwd string) error {
 	// This is where you would create the necessary user for the web console
 	// For now, we will just log the action
 	log.Println("Conecting to the database...")
-	db, err := db.ConnectDB()
+	dbConn, err := db.ConnectDB()
 	if err != nil {
 		log.Println("Error connecting to the database:", err)
-	// Here you would implement the logic to create the admin	 user
-	return nil	
-
+		return err
 	}
+	defer dbConn.Close()
+	// Here you would implement the logic to create the admin user
+	log.Printf("Admin user %s passwd %s would be created here.", usr, passwd)
+	return nil
+}
+
+func handleAdminUser(w http.ResponseWriter, r *http.Request) {
+	// Handle the admin user creation form submission
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get the form values
+	username := r.FormValue("user")
+	password := r.FormValue("password")
+	confirmPassword := r.FormValue("confirm_password")
+	// Validate the form values
+	if username == "" || password == "" || confirmPassword == "" {
+		http.Error(w, "All fields are required", http.StatusBadRequest)
+		return
+	}
+
+	if password != confirmPassword {
+		http.Error(w, "Passwords do not match", http.StatusBadRequest)
+		return
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Println("Error hashing password:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	// Create the admin user
+	err = createAdminUser(username, string(hash))
+	if err != nil {
+		log.Println("Error creating admin user:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	log.Println("Admin user created successfully")
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
 
 func main() {
 	// Create a new http.ServeMux
@@ -184,6 +232,9 @@ func main() {
 
 	fs := http.FileServer(http.Dir("static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
+
+	// Register the form for creating the admin user
+	mux.Handle("/add_user/", Logging()(handleAdminUser))
 
 	// Start the server
 	err := http.ListenAndServe(":8080", mux)
