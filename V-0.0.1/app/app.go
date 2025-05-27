@@ -11,7 +11,7 @@ import (
 	"os"
 	"strings"
 	"time"
-
+	"github.com/thuatus/EnterpriteCA/tree/main/V-0.0.1/db"
 	"github.com/thuatus/EnterpriteCA/tree/main/V-0.0.1/ca"
 )
 
@@ -149,6 +149,19 @@ func ApplyInitialSettings(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
+func createAdminUser(usr string, passwd string) error {
+	// Create the admin user for the web console
+	// This is where you would create the necessary user for the web console
+	// For now, we will just log the action
+	log.Println("Conecting to the database...")
+	db, err := db.ConnectDB()
+	if err != nil {
+		log.Println("Error connecting to the database:", err)
+	// Here you would implement the logic to create the admin	 user
+	return nil	
+
+	}
+
 func main() {
 	// Create a new http.ServeMux
 	mux := http.NewServeMux()
@@ -158,15 +171,19 @@ func main() {
 		if err != nil {
 			log.Println("Initial settings not found, redirecting to form:", err)
 			FormInitialSettings(w, r)
+			http.ServeFile(w, r, "./static/first_login.html")
 			return
 		}
 
 		fmt.Println("Initial settings found, serving main page")
-		// http.ServeFile(w, r, "templates/index.html")
+		http.ServeFile(w, r, "index.html")
 	}))
 
 	// Register the form for initial settings
 	mux.Handle("/save_init_cfg/", Logging()(ApplyInitialSettings))
+
+	fs := http.FileServer(http.Dir("static"))
+	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	// Start the server
 	err := http.ListenAndServe(":8080", mux)
