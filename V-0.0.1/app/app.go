@@ -161,13 +161,21 @@ func createAdminUser(usr string, passwd string) error {
 	// For now, we will just log the action
 	log.Println("Conecting to the database...")
 	dbConn, err := db.ConnectDB()
+
 	if err != nil {
 		log.Println("Error connecting to the database:", err)
 		return err
 	}
 	defer dbConn.Close()
-	// Here you would implement the logic to create the admin user
-	log.Printf("Admin user %s passwd %s would be created here.", usr, passwd)
+
+	//  create the admin user
+	_, err = dbConn.Exec("INSERT INTO ca.users (name, passwd, active ) VALUES (?, ?, ?)", usr, passwd, 1)
+	if err != nil {
+		log.Println("Error inserting admin user into the database:", err)
+		return err
+	}
+
+	log.Println("Admin user created successfully")
 	return nil
 }
 
