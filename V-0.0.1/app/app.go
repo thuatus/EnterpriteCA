@@ -94,6 +94,7 @@ func FormInitialSettings(w http.ResponseWriter, _ *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
+
 }
 
 func ApplyInitialSettings(w http.ResponseWriter, r *http.Request) {
@@ -148,9 +149,10 @@ func ApplyInitialSettings(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Initial settings applied successfully")
 
 	// Redirect to the main page or show a success message
-	// http.Redirect(w, r, "/", http.StatusSeeOther)
-	http.ServeFile(w, r, "/static/first_login.html")
-	log.Println("Redirecting to first login page")
+	//http.Redirect(w, r, "/", http.StatusSeeOther)
+	fmt.Println("Redirecting to first login page")
+	http.Redirect(w, r, "/static/first_login.html", http.StatusSeeOther)
+
 }
 
 func createAdminUser(usr string, passwd string) error {
@@ -170,46 +172,51 @@ func createAdminUser(usr string, passwd string) error {
 }
 
 func handleAdminUser(w http.ResponseWriter, r *http.Request) {
-	// Handle the admin user creation form submission
+	// Handle the admin user creatio
 	if r.Method != http.MethodPost {
+		// Serve the form (first_login.html)
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		log.Println("Method not allowed for admin user creation")
 		return
-	}
+	} else {
 
-	// Get the form values
-	username := r.FormValue("user")
-	password := r.FormValue("password")
-	confirmPassword := r.FormValue("confirm_password")
-	// Validate the form values
-	if username == "" || password == "" || confirmPassword == "" {
-		http.Error(w, "All fields are required", http.StatusBadRequest)
-		return
-	}
+		// Get the form values
+		username := r.FormValue("user")
+		password := r.FormValue("password")
+		confirmPassword := r.FormValue("confirmPassword")
+		// Validate the form values
+		if username == "" || password == "" || confirmPassword == "" {
+			http.Error(w, "All fields are required", http.StatusBadRequest)
+			log.Println("All fields are required for admin user creation")
+			return
+		}
 
-	if password != confirmPassword {
-		http.Error(w, "Passwords do not match", http.StatusBadRequest)
-		return
-	}
+		if password != confirmPassword {
+			http.Error(w, "Passwords do not match", http.StatusBadRequest)
+			log.Println("Passwords do not match for admin user creation")
+			return
+		}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		log.Println("Error hashing password:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
+		hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		if err != nil {
+			log.Println("Error hashing password:", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
 
-	// Create the admin user
-	err = createAdminUser(username, string(hash))
-	if err != nil {
-		log.Println("Error creating admin user:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
+		// Create the admin user
+		err = createAdminUser(username, string(hash))
+		if err != nil {
+			log.Println("Error creating admin user:", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
 
-	log.Println("Admin user created successfully")
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+		log.Println("Admin user created successfully")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+
+	}
 }
-
 func main() {
 	// Create a new http.ServeMux
 	mux := http.NewServeMux()
@@ -219,7 +226,10 @@ func main() {
 		if err != nil {
 			log.Println("Initial settings not found, redirecting to form:", err)
 			FormInitialSettings(w, r)
-			http.ServeFile(w, r, "./static/first_login.html")
+
+			log.Println("Redirecting to first login page")
+
+			// http.ServeFile(w, r, "./static/first_login.html")
 			return
 		}
 
@@ -227,11 +237,15 @@ func main() {
 		http.ServeFile(w, r, "index.html")
 	}))
 
+	// file Server to serve static files
+	mux.HandleFunc("/static/", Logging()(func(w http.ResponseWriter, r *http.Request) {
+
+		http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))).ServeHTTP(w, r)
+
+	}))
+
 	// Register the form for initial settings
 	mux.Handle("/save_init_cfg/", Logging()(ApplyInitialSettings))
-
-	fs := http.FileServer(http.Dir("static"))
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	// Register the form for creating the admin user
 	mux.Handle("/add_user/", Logging()(handleAdminUser))
