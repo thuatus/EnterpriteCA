@@ -3,6 +3,7 @@ package main
 // Web interface application to manager PKI
 
 import (
+	"crypto/rand"
 	"encoding/hex"
 	"fmt"
 	"html/template"
@@ -298,7 +299,7 @@ func authenticateUser(w http.ResponseWriter, r *http.Request) {
 	log.Printf("User %s authenticated successfully", username)
 
 	// Create a new session
-	session, err := store.Get(r, "session_token")
+	session, err := store.New(r, "session-token")
 	if err != nil {
 		log.Println("Error getting session:", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -306,6 +307,12 @@ func authenticateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	// Store the user ID in the session
 	bytes := make([]byte, 16)
+	_, err = rand.Read(bytes) // Fill the slice with cryptographically secure random bytes
+	if err != nil {
+		log.Println("Error generating random UUID:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
 	session.Values["UUID"] = hex.EncodeToString(bytes)
 	session.Values["Authenticated"] = true
 	session.Values["LoginTime"] = time.Now().Format(time.RFC3339)
@@ -328,7 +335,7 @@ func checkSession() Middleware {
 
 		return func(w http.ResponseWriter, r *http.Request) {
 			// Check if the session exists
-			session, err := store.Get(r, "session")
+			session, err := store.Get(r, "session-token")
 			if err != nil {
 				log.Println("Error getting session:", err)
 				http.Redirect(w, r, "/login", http.StatusSeeOther)
