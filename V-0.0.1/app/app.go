@@ -175,7 +175,6 @@ func createAdminUser(usr string, passwd string) error {
 		return err
 	}
 
-	log.Println("Admin user created successfully")
 	return nil
 }
 
@@ -225,6 +224,75 @@ func handleAdminUser(w http.ResponseWriter, r *http.Request) {
 
 	}
 }
+
+// authenticate user credentials
+func authenticateUser(w http.ResponseWriter, r *http.Request) {
+	// Handle the login request
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	username := r.FormValue("username")
+	password := r.FormValue("password")
+
+	// No need to generate a hash here; we'll compare the password with the stored hash below
+
+	// Validate the form values
+	if username == "" || password == "" {
+		http.Error(w, "Username and password are required", http.StatusBadRequest)
+		return
+	}
+
+	// check lengh of password
+	if len(password) < 8 {
+		http.Error(w, "Password must be at least 8 characters long", http.StatusBadRequest)
+		return
+	}
+
+	dbConn, err := db.ConnectDB()
+	if err != nil {
+		log.Println("Error connecting to the database:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	defer dbConn.Close()
+
+	var storedHash string
+	err = dbConn.QueryRow("SELECT passwd FROM ca.users WHERE name = ?", username).Scan(&storedHash)
+	if err != nil {
+		log.Println("Error querying user:", err)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(storedHash), []byte(password))
+	if err != nil {
+		log.Println("Invalid credentials:", err)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// check if user exists and is active
+	var active int
+	err = dbConn.QueryRow("SELECT active FROM ca.users WHERE name = ?", username).Scan(&active)
+	if err != nil {
+
+		log.Println("Error querying user active status:", err)
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	if active == 0 {
+		log.Println("User is not active")
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	log.Printf("User %s authenticated successfully", username)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+// main function to start the web server
 func main() {
 	// Create a new http.ServeMux
 	mux := http.NewServeMux()
@@ -257,6 +325,17 @@ func main() {
 
 	// Register the form for creating the admin user
 	mux.Handle("/add_user/", Logging()(handleAdminUser))
+
+	// REgister the form for login
+	mux.Handle("/login/", Logging()(func(w http.ResponseWriter, r *http.Request) {
+
+		// Serve the login form
+		http.ServeFile(w, r, "./static/login.html")
+		return
+	}))
+
+	// Register the login handler
+	mux.Handle("/authUser/", Logging()(authenticateUser))
 
 	// Start the server
 	err := http.ListenAndServe(":8080", mux)
