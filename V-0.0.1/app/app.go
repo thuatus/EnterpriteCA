@@ -3,6 +3,7 @@ package main
 // Web interface application to manager PKI
 
 import (
+	"encoding/hex"
 	"fmt"
 	"html/template"
 	"log"
@@ -12,12 +13,18 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gorilla/sessions"
 	"github.com/thuatus/EnterpriteCA/tree/main/V-0.0.1/ca"
 	"github.com/thuatus/EnterpriteCA/tree/main/V-0.0.1/db"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type Middleware func(http.HandlerFunc) http.HandlerFunc
+
+var (
+	key   = []byte("super-secret-key")
+	store = sessions.NewCookieStore(key)
+)
 
 // Logging logs all requests with its path and the time it took to process
 func Logging() Middleware {
@@ -289,7 +296,64 @@ func authenticateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("User %s authenticated successfully", username)
+
+	// Create a new session
+	session, err := store.Get(r, "session_token")
+	if err != nil {
+		log.Println("Error getting session:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	// Store the user ID in the session
+	bytes := make([]byte, 16)
+	session.Values["UUID"] = hex.EncodeToString(bytes)
+	session.Values["Authenticated"] = true
+	session.Values["LoginTime"] = time.Now().Format(time.RFC3339)
+	session.Values["UserAgent"] = r.UserAgent()
+
+	// Save the session
+	err = session.Save(r, w)
+	if err != nil {
+		log.Println("Error saving session:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	log.Printf("Session created for user %s", username)
+
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func checkSession() Middleware {
+	return func(f http.HandlerFunc) http.HandlerFunc {
+
+		return func(w http.ResponseWriter, r *http.Request) {
+			// Check if the session exists
+			session, err := store.Get(r, "session")
+			if err != nil {
+				log.Println("Error getting session:", err)
+				http.Redirect(w, r, "/login", http.StatusSeeOther)
+				return
+			}
+
+			_, ok := session.Values["UUID"]
+			if !ok {
+
+				log.Println("Session not found or user not authenticated")
+				http.Redirect(w, r, "/login", http.StatusSeeOther)
+				return
+			}
+
+			// Call the next middleware/handler in chain
+			f(w, r)
+		}
+	}
+}
+
+func ChainMiddleware(f http.HandlerFunc, middlewares ...Middleware) http.HandlerFunc {
+	for _, m := range middlewares {
+		f = m(f)
+	}
+	return f
 }
 
 // main function to start the web server
@@ -297,7 +361,7 @@ func main() {
 	// Create a new http.ServeMux
 	mux := http.NewServeMux()
 	// Register the logging middleware
-	mux.HandleFunc("/", Logging()(func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/", Logging()(checkSession()(func(w http.ResponseWriter, r *http.Request) {
 		_, err := checkInitialSettings()
 		if err != nil {
 			log.Println("Initial settings not found, redirecting to form:", err)
@@ -311,7 +375,7 @@ func main() {
 
 		fmt.Println("Initial settings found, serving main page")
 		http.ServeFile(w, r, "index.html")
-	}))
+	})))
 
 	// file Server to serve static files
 	mux.HandleFunc("/static/", Logging()(func(w http.ResponseWriter, r *http.Request) {
