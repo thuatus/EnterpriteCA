@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Issue Server Certificate</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        form { max-width: 600px; margin: auto; }
+        label { display: block; margin-top: 15px; }
+        input, textarea { width: 100%; padding: 8px; margin-top: 5px; }
+        button { margin-top: 20px; padding: 10px 20px; }
+    </style>
+</head>
+<body>
+    <h2>Submit Certificate Signing Request (CSR)</h2>
+    CA Issuer: {{}}
+
+ 
+    <br><br><br><br>
+    <form action="/add_server_cert/" method="POST">
+        <label for="serverName">Server Name:</label>
+        <input type="text" id="serverName" name="serverName" placeholder="e.g. server.example.com" required>
+
+       <button type="submit">Submit CSR</button>
+    </form>
+    <br><br>
+    
+    CA Issuer: {{.CAIssuer}}
+    Country  = {{.Country}}
+    State: = {{.State}}
+    Locality  = {{.Locality}}
+    Organization  = {{.Organization}}
+    Organization Unit = {{.OrganizationUnit}}
+    
+</body>
+</html>
