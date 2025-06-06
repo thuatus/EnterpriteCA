@@ -255,8 +255,8 @@ func GetIntermediateCAInfo() (CertInfo, error) {
 	// Lê o conteúdo do arquivo
 	IntCAInfo, err := os.ReadFile("/home/alvaro/srv/CA/definitions.txt")
 	if err != nil {
-		fmt.Printf("can't write file %v\n", err)
-		return "", err
+		fmt.Printf("can't read file %v\n", err)
+		return CertInfo{}, fmt.Println("can not read the intca file", err
 	}
 
 	str := string(IntCAInfo)
