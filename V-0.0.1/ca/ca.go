@@ -2,6 +2,8 @@
 package ca
 
 import (
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"io"
 	"log"
@@ -10,6 +12,17 @@ import (
 	"strings"
 	"text/template"
 )
+
+// structu to store Certificate Information
+type CertInfo struct {
+	Issuer             string
+	Subject            string
+	Country            []string
+	State              []string
+	Locality           []string
+	Organization       []string
+	OrganizationalUnit []string
+}
 
 // Creates folders and files structure
 func CreatePKIFolders(caName string) (string, string, error) {
@@ -235,6 +248,56 @@ func getCAInfo() (string, string, error) {
 	paths := strings.Split(str, "|")
 
 	return paths[0], paths[1], nil
+}
+
+// returns the Informnation about the Intermediate CA
+func GetIntermediateCAInfo() (CertInfo, error) {
+	// Lê o conteúdo do arquivo
+	IntCAInfo, err := os.ReadFile("/home/alvaro/srv/CA/definitions.txt")
+	if err != nil {
+		fmt.Printf("can't write file %v\n", err)
+		return "", err
+	}
+
+	str := string(IntCAInfo)
+
+	paths := strings.Split(str, "|")
+
+	if len(paths) < 2 {
+		return CertInfo{}, fmt.Errorf("invalid CA definitions file format")
+	}
+
+	certPath := paths[1] + "/intermediateCA.crt"
+	certFile, err := os.ReadFile(certPath)
+	if err != nil {
+		fmt.Println("can not read the intca file", err)
+		return CertInfo{}, fmt.Errorf("error reading intermediate CA certificate file: %v", err)
+	}
+
+	// Decodificando o certificado PEM
+	block, _ := pem.Decode(certFile)
+	if block == nil {
+		fmt.Println("error decoding intermediate CA certificate PEM block")
+		return CertInfo{}, fmt.Errorf("error decoding intermediate CA certificate PEM block")
+	}
+
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		fmt.Println("Erro ao parsear o certificado:", err)
+		return CertInfo{}, fmt.Errorf("error parsing intermediate CA certificate: %v", err)
+	}
+
+	certInfo := CertInfo{
+		Issuer:             cert.Issuer.String(),
+		Subject:            cert.Subject.String(),
+		Country:            cert.Issuer.Country,
+		State:              cert.Issuer.Province,
+		Locality:           cert.Issuer.Locality,
+		Organization:       cert.Issuer.Organization,
+		OrganizationalUnit: cert.Issuer.OrganizationalUnit,
+	}
+
+	return certInfo, nil
 }
 
 // Creates CA certificate, private key and public key

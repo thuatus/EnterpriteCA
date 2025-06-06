@@ -14,24 +14,28 @@
 </head>
 <body>
     <h2>Submit Certificate Signing Request (CSR)</h2>
-    CA Issuer: {{}}
-
- 
+     
     <br><br><br><br>
     <form action="/add_server_cert/" method="POST">
         <label for="serverName">Server Name:</label>
         <input type="text" id="serverName" name="serverName" placeholder="e.g. server.example.com" required>
 
-       <button type="submit">Submit CSR</button>
+    <button type="submit" onclick="return confirmSubmit()">Issue Server Certificate</button>
+    <script>
+        function confirmSubmit() {
+         return confirm('Are you sure you want Coninue?');
+        }
+    </script>
     </form>
     <br><br>
     
-    CA Issuer: {{.CAIssuer}}
-    Country  = {{.Country}}
-    State: = {{.State}}
-    Locality  = {{.Locality}}
-    Organization  = {{.Organization}}
-    Organization Unit = {{.OrganizationUnit}}
+    CA Issuer: {{.Issuer}} <br>
+    CA Subject: {{.Subject}} <br>
+    Country  = {{.Country}} <br>
+    State: = {{.State}}<br>
+    Locality  = {{.Locality}} <br>
+    Organization  = {{.Organization}} <br>
+    Organizational Unit = {{.OrganizationalUnit}} <br>
     
 </body>
 </html>

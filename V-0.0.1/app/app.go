@@ -363,6 +363,32 @@ func ChainMiddleware(f http.HandlerFunc, middlewares ...Middleware) http.Handler
 	return f
 }
 
+// handle the certificate issuance request form
+func IssueCertHandler(w http.ResponseWriter, r *http.Request) {
+
+	// RETURN TEMPLATE FOR THE FORM
+	template, err := template.ParseFiles("templates/frm_add_cert.html")
+	if err != nil {
+		log.Println("Error parsing template:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	IntCAInfo, err := ca.GetIntermediateCAInfo()
+	if err != nil {
+		log.Println("Error getting intermediate CA info:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	if err := template.Execute(w, IntCAInfo); err != nil {
+		log.Println("Error executing template:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+}
+
 // main function to start the web server
 func main() {
 	// Create a new http.ServeMux
