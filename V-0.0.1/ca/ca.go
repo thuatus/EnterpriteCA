@@ -270,7 +270,7 @@ func GetIntermediateCAInfo() (CertInfo, error) {
 	certPath := paths[1] + "/intermediateCA.crt"
 	certFile, err := os.ReadFile(certPath)
 	if err != nil {
-		fmt.Println("can not read the intca file", err)
+		fmt.Println("error reading intermediate CA certificate file:", err)
 		return CertInfo{}, fmt.Errorf("error reading intermediate CA certificate file: %v", err)
 	}
 
