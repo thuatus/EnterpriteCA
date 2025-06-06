@@ -23,19 +23,46 @@
     <button type="submit" onclick="return confirmSubmit()">Issue Server Certificate</button>
     <script>
         function confirmSubmit() {
-         return confirm('Are you sure you want Coninue?');
+            // retund aks with site name confirmation
+            var serverName = document.getElementById('serverName').value;
+            if (!serverName) {
+                alert('Please enter a server name.');
+                return false;
+            }
+            // Confirm with the user
+            if (serverName.length < 3) {
+                alert('Server name must be at least 3 characters long.');
+                return false;
+            }
+            if (!/^[a-zA-Z0-9.-]+$/.test(serverName)) {
+                alert('Server name can only contain letters, numbers, dots, and hyphens.');
+                return false;
+            }
+            if (!serverName.endsWith('.com') &&
+                !serverName.endsWith('.org') &&
+                !serverName.endsWith('.net')) {
+                alert('Server name must end with .com, .org, or .net.');
+                return false;
+            }
+            // If all checks pass, confirm submission
+            if (confirm('Are you sure you want to issue a certificate for ' + serverName + '?')) {
+                return true;
+            }
+            // If user cancels, prevent form submission
+            return false;
         }
+
     </script>
     </form>
     <br><br>
     
-    CA Issuer: {{.Issuer}} <br>
-    CA Subject: {{.Subject}} <br>
-    Country  = {{.Country}} <br>
-    State: = {{.State}}<br>
-    Locality  = {{.Locality}} <br>
-    Organization  = {{.Organization}} <br>
-    Organizational Unit = {{.OrganizationalUnit}} <br>
+    <strong>Issuer: </strong> {{.Issuer}} <br>
+    <strong>CA Subject:</strong> {{.Subject}} <br>
+    <strong>Country:</strong> {{.Country}} <br>
+    <strong>State:</strong>{{.State}}<br>
+    <strong>Locality: </strong>{{.Locality}} <br>
+    <strong>Organization:</strong>  {{.Organization}} <br>
+    <strong>Organizational Unit:</strong> {{.OrganizationalUnit}} <br>
     
 </body>
 </html>

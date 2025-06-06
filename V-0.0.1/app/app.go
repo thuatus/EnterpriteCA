@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/sessions"
 	"github.com/thuatus/EnterpriteCA/tree/main/V-0.0.1/ca"
 	"github.com/thuatus/EnterpriteCA/tree/main/V-0.0.1/db"
@@ -330,6 +331,32 @@ func authenticateUser(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
+// check if session token is expired
+func isTokenExpired(tokenString string) bool {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return []byte(""), nil
+	})
+
+	if err != nil {
+		fmt.Println("Erro to parse token:", err)
+		return true
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		fmt.Println("Cannot parse claims from token.")
+		return true
+	}
+
+	expiration, ok := claims["exp"].(float64)
+	if !ok {
+		fmt.Println("Claim 'exp' not found.")
+		return true
+	}
+
+	return time.Now().Unix() > int64(expiration)
+}
+
 func checkSession() Middleware {
 	return func(f http.HandlerFunc) http.HandlerFunc {
 
@@ -342,7 +369,15 @@ func checkSession() Middleware {
 				return
 			}
 
-			_, ok := session.Values["UUID"]
+			//check if token is expired based on max age
+			tokenString, ok := session.Values["token"].(string)
+			if !ok || isTokenExpired(tokenString) {
+				log.Println("Session token expired")
+				http.Redirect(w, r, "/login", http.StatusSeeOther)
+				return
+			}
+
+			_, ok = session.Values["UUID"]
 			if !ok {
 
 				log.Println("Session not found or user not authenticated")
@@ -382,7 +417,7 @@ func IssueCertHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := template.Execute(w, IntCAInfo); err != nil {
-		log.Println("Error executing template:", err)
+		log.Println("Error executing frm_add_cert template:", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
@@ -433,6 +468,9 @@ func main() {
 
 	// Register the login handler
 	mux.Handle("/authUser/", Logging()(authenticateUser))
+
+	// Register the form for issuing certificates
+	mux.Handle("/issue_cert/", (ChainMiddleware(IssueCertHandler, Logging(), checkSession())))
 
 	// Start the server
 	err := http.ListenAndServe(":8080", mux)

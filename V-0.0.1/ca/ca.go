@@ -13,7 +13,7 @@ import (
 	"text/template"
 )
 
-// structu to store Certificate Information
+// struct to store Certificate Information
 type CertInfo struct {
 	Issuer             string
 	Subject            string
@@ -256,7 +256,7 @@ func GetIntermediateCAInfo() (CertInfo, error) {
 	IntCAInfo, err := os.ReadFile("/home/alvaro/srv/CA/definitions.txt")
 	if err != nil {
 		fmt.Printf("can't read file %v\n", err)
-		return CertInfo{}, fmt.Println("can not read the intca file", err
+		return CertInfo{}, fmt.Errorf("can not read the intca file: %v", err)
 	}
 
 	str := string(IntCAInfo)

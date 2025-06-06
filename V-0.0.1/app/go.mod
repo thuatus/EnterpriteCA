@@ -5,6 +5,7 @@ go 1.24.2
 replace github.com/thuatus/EnterpriteCA/tree/main/V-0.0.1/ca => ../ca
 
 require (
+	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/gorilla/sessions v1.4.0
 	github.com/thuatus/EnterpriteCA/tree/main/V-0.0.1/ca v0.0.0-00010101000000-000000000000
 	github.com/thuatus/EnterpriteCA/tree/main/V-0.0.1/db v0.0.0-00010101000000-000000000000
