@@ -33,3 +33,14 @@ func ConnectDB() (*sql.DB, error) {
 	return db, nil
 
 }
+
+/*func AddCertificate(cert string) error {
+	// AddCertificate adds a certificate to the database
+	query := "INSERT INTO certificates (cert) VALUES (?)"
+	_, err := db.Exec(query, cert)
+	if err != nil {
+		return fmt.Errorf("failed to add certificate: %w", err)
+	}
+	return nil
+
+}*/

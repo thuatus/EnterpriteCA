@@ -355,8 +355,78 @@ func CreateCACertificate(caPathName string) (string, error) {
 	return string(caKeyinfo) + "|" + string(caCertinfo), nil
 }
 
-//Issue a server certificate
+// Generates a private key for a server certificate file
+func GenerateServerKey(serverName string) (string, error) {
 
+	_, keyPath, err := getCAInfo()
+	if err != nil {
+		log.Fatalf("Error get CA structure definitions: %v", err)
+		return "", err
+	}
+	serverKeyPath := keyPath + "/private/" + serverName + ".key"
+	if _, err := os.Stat(serverKeyPath); err == nil {
+		log.Printf("Server key %s already exists, skipping generation.\n", serverKeyPath)
+		return serverKeyPath, nil
+	}
+	fmt.Printf("Generating server private key %s ...\n", serverName+".key")
+	// Execute the openssl command to generate the server key
+	cmd := exec.Command("openssl", "genrsa", "-out", serverKeyPath, "4096")
+	serverKeyinfo, err := cmd.Output()
+	if err != nil {
+		log.Fatalf("Error creating server key %v: %d", serverKeyinfo, err)
+		return "", err
+	}
+	fmt.Printf("Server private key generated: %s\n", serverKeyPath)
+	return serverKeyPath, nil
+}
+
+// Generates a Certificate Signing Request (CSR) for a server certificate file
+func GenerateCSR(serverName string) (string, error) {
+
+	serverCertinfo, err := GetIntermediateCAInfo()
+	if err != nil {
+		log.Fatalf("Error getting Intermediate CA information: %v", err)
+		return "", err
+	}
+
+	// Generate the server key if it does not exist
+	serverKeyPath, err := GenerateServerKey(serverName)
+	if err != nil {
+		log.Fatalf("Error generating server key: %v", serverKeyPath)
+		return "", err
+	}
+	fmt.Printf("Server private key generated: %s\n", serverKeyPath)
+
+	// Use the Intermediate CA path to store the CSR
+	_, intCAPath, err := getCAInfo()
+	serverCsrPath := intCAPath + "/csr/" + serverName + ".csr"
+	if _, err := os.Stat(serverCsrPath); err == nil {
+		log.Printf("Server CSR %s already exists, skipping generation.\n", serverCsrPath)
+		return "", nil
+	}
+
+	//fmt.Printf("Generating server certificate request %s ...\n", serverName+".csr")
+
+	subject := fmt.Sprintf("/C=%s/ST=%s/L=%s/O=%s/OU=%s/CN=%s", serverCertinfo.Country[0], serverCertinfo.State[0], serverCertinfo.Locality[0], serverCertinfo.Organization[0], serverCertinfo.OrganizationalUnit[0], serverName)
+
+	fmt.Println("Subject for server certificate request:", subject)
+	// Execute the openssl command to generate the server certificate request
+
+	// generating server certificate request
+
+	cmd := exec.Command("openssl", "req", "-new", "-key", serverKeyPath, "-out", serverCsrPath, "-subj", subject, "-addext", fmt.Sprintf("subjectAltName = DNS:%s", serverName))
+	serverCsrinfo, err := cmd.Output()
+	if err != nil {
+		log.Fatalf("Error creating server certificate request %v: %d", serverCsrinfo, err)
+		return "", err
+	}
+
+	fmt.Printf("Server certificate request generated: %s\n", serverCsrPath)
+	return serverCsrPath, nil
+
+}
+
+// Issue a server certificate
 func IssueServerCertificate(ServerName string, csr io.Reader) (string, error) {
 
 	fmt.Printf("getting CA information ...\n")

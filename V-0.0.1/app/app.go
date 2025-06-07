@@ -11,6 +11,7 @@ import (
 	"log/syslog"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -411,6 +412,76 @@ func IssueCertHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// Issue server certificate and save it to the database
+func CreateServerCert(w http.ResponseWriter, r *http.Request) {
+	// Handle the server certificate creation request
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get the form values
+	serverName := r.FormValue("serverName")
+
+	// Validate the form values
+
+	if serverName == "" {
+		http.Error(w, "Server name is required", http.StatusBadRequest)
+		return
+	}
+
+	if len(serverName) < 3 {
+		http.Error(w, "Server name must be at least 3 characters long", http.StatusBadRequest)
+		return
+	}
+	if len(serverName) > 64 {
+		http.Error(w, "Server name must be at most 64 characters long", http.StatusBadRequest)
+		return
+	}
+	// verify that server name contains domains .com .org .gov .jus
+	validDomain := regexp.MustCompile(`^([a-zA-Z0-9-]+\.)+(com|gov|jus|org)(\.[a-zA-Z]{2})?$`)
+	if !validDomain.MatchString(serverName) {
+		http.Error(w, "Server name must contain a domain", http.StatusBadRequest)
+		return
+	}
+
+	//generate a csr file for the server certificate
+	csr, err := ca.GenerateCSR(serverName)
+	if err != nil {
+		log.Println("Error generating CSR:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	csrFile, err := os.Open(csr)
+	if err != nil {
+		log.Println("Error opening CSR file:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	defer csrFile.Close()
+	// Create the server certificate
+	// cert, err := ca.IssueServerCertificate(serverName, csrFile)
+	_, err = ca.IssueServerCertificate(serverName, csrFile)
+	if err != nil {
+		log.Println("Error creating server certificate:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	// Save the certificate to the database
+	/*err = db.AddCertificate(cert)
+	if err != nil {
+		log.Println("Error saving certificate to database:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}*/
+
+	log.Println("Server certificate created and saved successfully")
+	// ****>change to view the certificate page
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
 // main function to start the web server
 func main() {
 	// Create a new http.ServeMux
@@ -458,6 +529,8 @@ func main() {
 
 	// Register the form for issuing certificates
 	mux.Handle("/issue_cert/", (ChainMiddleware(IssueCertHandler, Logging(), checkSession())))
+
+	mux.Handle("/add_server_cert/", (ChainMiddleware(CreateServerCert, Logging(), checkSession())))
 
 	// Start the server
 	err := http.ListenAndServe(":8080", mux)
