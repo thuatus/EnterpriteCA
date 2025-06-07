@@ -14,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/gorilla/sessions"
 	"github.com/thuatus/EnterpriteCA/tree/main/V-0.0.1/ca"
 	"github.com/thuatus/EnterpriteCA/tree/main/V-0.0.1/db"
@@ -331,32 +330,7 @@ func authenticateUser(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-// check if session token is expired
-func isTokenExpired(tokenString string) bool {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return []byte(""), nil
-	})
-
-	if err != nil {
-		fmt.Println("Erro to parse token:", err)
-		return true
-	}
-
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		fmt.Println("Cannot parse claims from token.")
-		return true
-	}
-
-	expiration, ok := claims["exp"].(float64)
-	if !ok {
-		fmt.Println("Claim 'exp' not found.")
-		return true
-	}
-
-	return time.Now().Unix() > int64(expiration)
-}
-
+// checkSession checks if the user is authenticated and the session is valid
 func checkSession() Middleware {
 	return func(f http.HandlerFunc) http.HandlerFunc {
 
@@ -369,18 +343,31 @@ func checkSession() Middleware {
 				return
 			}
 
-			//check if token is expired based on max age
-			tokenString, ok := session.Values["token"].(string)
-			if !ok || isTokenExpired(tokenString) {
-				log.Println("Session token expired")
+			_, ok := session.Values["UUID"]
+			if !ok {
+
+				log.Println("Session not found or user not authenticated")
 				http.Redirect(w, r, "/login", http.StatusSeeOther)
 				return
 			}
 
-			_, ok = session.Values["UUID"]
+			//check if token is expired based on max age
+			loginTimeStr, ok := session.Values["LoginTime"].(string)
 			if !ok {
+				log.Println("Login time not found in session")
+				http.Redirect(w, r, "/login", http.StatusSeeOther)
 
-				log.Println("Session not found or user not authenticated")
+				return
+			}
+			loginTime, err := time.Parse(time.RFC3339, loginTimeStr)
+			if err != nil {
+				log.Println("Error parsing login time:", err)
+				http.Redirect(w, r, "/login", http.StatusSeeOther)
+				return
+			}
+			maxAge := 60 * time.Minute // Set the maximum age for the session
+			if time.Since(loginTime) > maxAge {
+				log.Println("Session expired, redirecting to login")
 				http.Redirect(w, r, "/login", http.StatusSeeOther)
 				return
 			}
