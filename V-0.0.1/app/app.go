@@ -487,7 +487,30 @@ func CreateServerCert(w http.ResponseWriter, r *http.Request) {
 	defer dbConn.Close()
 
 	// Save the certificate to the database
-	err = db.AddCertificate(cert)
+	err = dbConn.Ping()
+	if err != nil {
+		log.Println("Error pinging the database:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	// Create a dbCertInfo struct to hold the certificate information
+	strPublicKey := hex.EncodeToString(cert.PublicKey)
+	if strPublicKey == "" {
+		log.Println("Error encoding public key to hex string")
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	// use formatted as your string in the desired pattern
+
+	dbCertInfo := db.DBCertInfo{
+		Issuer:    cert.Issuer,
+		Subject:   cert.Subject,
+		PublicKey: strPublicKey,
+		Expire:    expireTime, // Pass as time.Time
+	}
+	err = db.AddCertificate(dbCertInfo)
 	if err != nil {
 		log.Println("Error saving certificate to database:", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -538,7 +561,7 @@ func main() {
 
 		// Serve the login form
 		http.ServeFile(w, r, "./static/login.html")
-		return
+
 	}))
 
 	// Register the login handler

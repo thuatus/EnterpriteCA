@@ -14,11 +14,11 @@ import (
 var db *sql.DB
 
 // dbCertInfo is a type that represents the certificate information stored in the database
-type dbCertInfo struct {
+type DBCertInfo struct {
 	Issuer    string
 	Subject   string
 	PublicKey string
-	expire    time.Time
+	Expire    time.Time
 }
 
 // ConnectDB connects to the CA database and returns a pointer to the sql.DB instance
@@ -43,13 +43,13 @@ func ConnectDB() (*sql.DB, error) {
 
 }
 
-func AddCertificate(cert dbCertInfo) error {
+func AddCertificate(cert DBCertInfo) error {
 	// AddCertificate adds a certificate to the database
 	if db == nil {
 		return fmt.Errorf("database connection is not established")
 	}
 
-	certData := cert.expire
+	certData := cert.Expire
 	// Prepare the SQL query to insert the certificate
 	query := "INSERT INTO ca (issuer,subject,public_key,created,expiration,isvalid) VALUES (?,?,?,?,?,?)"
 	_, err := db.Exec(query, cert.Issuer, cert.Subject, cert.PublicKey, time.Now(), certData, true)

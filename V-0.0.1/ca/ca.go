@@ -17,12 +17,13 @@ import (
 type CertInfo struct {
 	Issuer             string
 	Subject            string
+	PublicKey          []byte
 	Country            []string
 	State              []string
 	Locality           []string
 	Organization       []string
 	OrganizationalUnit []string
-	expire             *string
+	Expire             *string
 }
 
 // Creates folders and files structure
@@ -515,12 +516,13 @@ func GetServerCertificateInfo(serverName string) (CertInfo, error) {
 	certInfo := CertInfo{
 		Issuer:             cert.Issuer.String(),
 		Subject:            cert.Subject.String(),
+		PublicKey:          cert.Raw,
 		Country:            cert.Issuer.Country,
 		State:              cert.Issuer.Province,
 		Locality:           cert.Issuer.Locality,
 		Organization:       cert.Issuer.Organization,
 		OrganizationalUnit: cert.Issuer.OrganizationalUnit,
-		expire:             &dt_expire,
+		Expire:             &dt_expire,
 	}
 
 	return certInfo, nil
