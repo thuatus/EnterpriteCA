@@ -22,6 +22,7 @@ type CertInfo struct {
 	Locality           []string
 	Organization       []string
 	OrganizationalUnit []string
+	expire             *string
 }
 
 // Creates folders and files structure
@@ -399,6 +400,11 @@ func GenerateCSR(serverName string) (string, error) {
 
 	// Use the Intermediate CA path to store the CSR
 	_, intCAPath, err := getCAInfo()
+	if err != nil {
+		log.Fatalf("Error get CA definitions: %v", err)
+		return "", err
+	}
+
 	serverCsrPath := intCAPath + "/csr/" + serverName + ".csr"
 	if _, err := os.Stat(serverCsrPath); err == nil {
 		log.Printf("Server CSR %s already exists, skipping generation.\n", serverCsrPath)
@@ -475,6 +481,49 @@ func IssueServerCertificate(ServerName string, csr io.Reader) (string, error) {
 		return "", err
 	}
 	return string(serverCertinfo), nil
+}
+
+// return server certificate information
+func GetServerCertificateInfo(serverName string) (CertInfo, error) {
+	_, fintCAPath, err := getCAInfo()
+	if err != nil {
+		log.Fatalf("Error get CA definitions: %v", err)
+		return CertInfo{}, err
+	}
+
+	serverCertPath := fintCAPath + "/certs/" + serverName + ".crt"
+	certFile, err := os.ReadFile(serverCertPath)
+	if err != nil {
+		fmt.Println("error reading server certificate file:", err)
+		return CertInfo{}, fmt.Errorf("error reading server certificate file: %v", err)
+	}
+
+	// Decodificando o certificado PEM
+	block, _ := pem.Decode(certFile)
+	if block == nil {
+		fmt.Println("error decoding server certificate PEM block")
+		return CertInfo{}, fmt.Errorf("error decoding server certificate PEM block")
+	}
+
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		fmt.Println("Error parsing the server certificate:", err)
+		return CertInfo{}, fmt.Errorf("error parsing server certificate: %v", err)
+	}
+
+	dt_expire := cert.NotAfter.Format("2006-01-02 15:04:05")
+	certInfo := CertInfo{
+		Issuer:             cert.Issuer.String(),
+		Subject:            cert.Subject.String(),
+		Country:            cert.Issuer.Country,
+		State:              cert.Issuer.Province,
+		Locality:           cert.Issuer.Locality,
+		Organization:       cert.Issuer.Organization,
+		OrganizationalUnit: cert.Issuer.OrganizationalUnit,
+		expire:             &dt_expire,
+	}
+
+	return certInfo, nil
 }
 
 /*

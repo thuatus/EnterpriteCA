@@ -469,13 +469,30 @@ func CreateServerCert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//Save the certificate to the database
+	cert, err := ca.GetServerCertificateInfo(serverName)
+	if err != nil {
+		log.Println("Error getting server certificate info:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	// Connect to the database
+	dbConn, err := db.ConnectDB()
+	if err != nil {
+		log.Println("Error connecting to the database:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	defer dbConn.Close()
+
 	// Save the certificate to the database
-	/*err = db.AddCertificate(cert)
+	err = db.AddCertificate(cert)
 	if err != nil {
 		log.Println("Error saving certificate to database:", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
-	}*/
+	}
 
 	log.Println("Server certificate created and saved successfully")
 	// ****>change to view the certificate page
