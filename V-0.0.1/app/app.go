@@ -468,14 +468,17 @@ func CreateServerCert(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
+	log.Println("Server certificate created successfully for:", serverName)
 
 	//Save the certificate to the database
+
 	cert, err := ca.GetServerCertificateInfo(serverName)
 	if err != nil {
 		log.Println("Error getting server certificate info:", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
+	log.Println("Cert Objec:", cert.Subject)
 
 	// Connect to the database
 	dbConn, err := db.ConnectDB()
@@ -502,6 +505,17 @@ func CreateServerCert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	expire := cert.Expire
+
+	//parse string to date type
+	expireTime, err := time.Parse("2006-01-02 15:04:05", expire)
+	log.Println("Parsed Expire Time:", expireTime)
+	if err != nil {
+		log.Println("Error parsing expiration time:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
 	// use formatted as your string in the desired pattern
 
 	dbCertInfo := db.DBCertInfo{
@@ -519,7 +533,9 @@ func CreateServerCert(w http.ResponseWriter, r *http.Request) {
 
 	log.Println("Server certificate created and saved successfully")
 	// ****>change to view the certificate page
+
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+
 }
 
 // main function to start the web server

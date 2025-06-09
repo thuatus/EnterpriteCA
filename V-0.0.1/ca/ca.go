@@ -23,7 +23,7 @@ type CertInfo struct {
 	Locality           []string
 	Organization       []string
 	OrganizationalUnit []string
-	Expire             *string
+	Expire             string
 }
 
 // Creates folders and files structure
@@ -241,7 +241,7 @@ func getCAInfo() (string, string, error) {
 	// Lê o conteúdo do arquivo
 	caInfo, err := os.ReadFile("/home/alvaro/srv/CA/definitions.txt")
 	if err != nil {
-		fmt.Printf("can't write file %v\n", err)
+		fmt.Printf("can't read file %v\n", err)
 		return "", "", err
 	}
 
@@ -522,7 +522,7 @@ func GetServerCertificateInfo(serverName string) (CertInfo, error) {
 		Locality:           cert.Issuer.Locality,
 		Organization:       cert.Issuer.Organization,
 		OrganizationalUnit: cert.Issuer.OrganizationalUnit,
-		Expire:             &dt_expire,
+		Expire:             dt_expire,
 	}
 
 	return certInfo, nil

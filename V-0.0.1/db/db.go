@@ -49,10 +49,9 @@ func AddCertificate(cert DBCertInfo) error {
 		return fmt.Errorf("database connection is not established")
 	}
 
-	certData := cert.Expire
 	// Prepare the SQL query to insert the certificate
-	query := "INSERT INTO ca (issuer,subject,public_key,created,expiration,isvalid) VALUES (?,?,?,?,?,?)"
-	_, err := db.Exec(query, cert.Issuer, cert.Subject, cert.PublicKey, time.Now(), certData, true)
+	query := "INSERT INTO ca (issuer,subject,public_key,created,expiration,is_valid) VALUES (?,?,?,?,?,?)"
+	_, err := db.Exec(query, cert.Issuer, cert.Subject, cert.PublicKey, time.Now(), cert.Expire, 1)
 	if err != nil {
 		return fmt.Errorf("failed to add certificate: %w", err)
 	}
