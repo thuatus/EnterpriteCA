@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Certificate Information</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .search-box { margin-bottom: 15px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        tr.hide { display: none; }
+    </style>
+</head>
+<body>
+    <h2>Certificate Information</h2>
+    <div class="search-box">
+        <label for="searchInput">Search:</label>
+        <input type="text" id="searchInput" placeholder="Type to search...">
+    </div>
+    <table id="certTable">
+        <thead>
+            <tr>
+                <th>Application</th>
+                <th>Subject</th>
+                <th>Issued Date</th>
+                <th>Expiry Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            
+             {{range .}}
+            <tr>
+                <td>{{.Servername}}</td>
+                <td>{{.Subject}}</td>
+                <td>{{.Created}}</td>
+                <td>{{.Expire}}</td>
+                <td>{{.Status}}</td>
+                <td>
+                    <button onclick="alert('View details for {{application}}')">View</button>
+                    <button onclick="alert('Delete {{application}}')">Delete</button>
+                </td>
+            </tr>
+            {{end}}
+
+
+            <!-- Add more rows as needed -->
+        </tbody>
+    </table>
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const table = document.getElementById('certTable').getElementsByTagName('tbody')[0];
+
+        searchInput.addEventListener('keyup', function() {
+            const filter = searchInput.value.toLowerCase();
+            const rows = table.getElementsByTagName('tr');
+            for (let i = 0; i < rows.length; i++) {
+                const rowText = rows[i].textContent.toLowerCase();
+                rows[i].classList.toggle('hide', !rowText.includes(filter));
+            }
+        });
+    </script>
+</body>
+</html>
