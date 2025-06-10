@@ -18,7 +18,9 @@ type DBCertInfo struct {
 	Issuer    string
 	Subject   string
 	PublicKey string
+	Created   time.Time
 	Expire    time.Time
+	Status    int // 1 for valid, 0 for invalid
 }
 
 // ConnectDB connects to the CA database and returns a pointer to the sql.DB instance
@@ -43,6 +45,7 @@ func ConnectDB() (*sql.DB, error) {
 
 }
 
+// add certificate information to the database
 func AddCertificate(cert DBCertInfo) error {
 	// AddCertificate adds a certificate to the database
 	if db == nil {
@@ -56,5 +59,47 @@ func AddCertificate(cert DBCertInfo) error {
 		return fmt.Errorf("failed to add certificate: %w", err)
 	}
 	return nil
+
+}
+
+// Retrieves Certificates from the database by its subject
+
+func GetServerCertificates() ([]DBCertInfo, error) {
+
+	if db == nil {
+		return nil, fmt.Errorf("database connection is not established")
+	}
+	query := "SELECT issuer, subject, public_key, created, expiration, is_valid FROM ca"
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve certificates: %v", err)
+	}
+	defer rows.Close()
+
+	var certs []DBCertInfo
+	for rows.Next() {
+		var cert DBCertInfo
+		var date_create string
+		var date_exp string
+		if err := rows.Scan(&cert.Issuer, &cert.Subject, &cert.PublicKey, &date_create, &date_exp, &cert.Status); err != nil {
+			return nil, fmt.Errorf("failed to scan row: %v", err)
+		}
+		fmt.Printf("Issuer: %s, Subject: %s, Public Key: %s, Expiration: %s\n", cert.Issuer, cert.Subject, cert.PublicKey, cert.Expire)
+		cert.Created, err = time.Parse("2006-01-02 15:04:05", date_create)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse date: %v", err)
+		}
+
+		cert.Expire, err = time.Parse("2006-01-02 15:04:05", date_exp)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse expiration date: %v", err)
+		}
+
+		certs = append(certs, cert)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error occurred during row iteration: %v", err)
+	}
+	return certs, nil
 
 }

@@ -21,7 +21,7 @@
     <table id="certTable">
         <thead>
             <tr>
-                <th>Application</th>
+             <!--   <th>Application</th> -->
                 <th>Subject</th>
                 <th>Issued Date</th>
                 <th>Expiry Date</th>
@@ -33,14 +33,14 @@
             
              {{range .}}
             <tr>
-                <td>{{.Servername}}</td>
+             <!--   <td>{{.Servername}}</td> -->
                 <td>{{.Subject}}</td>
                 <td>{{.Created}}</td>
                 <td>{{.Expire}}</td>
                 <td>{{.Status}}</td>
                 <td>
-                    <button onclick="alert('View details for {{application}}')">View</button>
-                    <button onclick="alert('Delete {{application}}')">Delete</button>
+                    <button onclick="alert('View details for Certificate')">View Certificate</button>
+                    <button onclick="alert('Revoke Certificate')">Revoke Certificate</button>
                 </td>
             </tr>
             {{end}}

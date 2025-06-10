@@ -538,6 +538,42 @@ func CreateServerCert(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// hndle the view ca form, set up a template view
+func ViewCertificateForm(w http.ResponseWriter, r *http.Request) {
+	// Serve the view certificate form
+	template, err := template.ParseFiles("templates/frm_view_ca.html")
+
+	if err != nil {
+		log.Println("Error parsing template:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	// get database info about servers certificates
+	dbConn, err := db.ConnectDB()
+	if err != nil {
+		log.Println("Error connecting to the database:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	defer dbConn.Close()
+	// Get the list of server certificates from the database
+	ServerCerts, err := db.GetServerCertificates()
+	if err != nil {
+		log.Println("Error getting server certificates from database:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	// Execute the template with any necessary data
+	if err := template.Execute(w, ServerCerts); err != nil {
+		log.Println("Error executing frm_view_cert template:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+}
+
 // main function to start the web server
 func main() {
 	// Create a new http.ServeMux
@@ -587,6 +623,9 @@ func main() {
 	mux.Handle("/issue_cert/", (ChainMiddleware(IssueCertHandler, Logging(), checkSession())))
 
 	mux.Handle("/add_server_cert/", (ChainMiddleware(CreateServerCert, Logging(), checkSession())))
+
+	// Register the form for viewing certificates
+	mux.Handle("/view_cert/", (ChainMiddleware(ViewCertificateForm, Logging(), checkSession())))
 
 	// Start the server
 	err := http.ListenAndServe(":8080", mux)
