@@ -39,6 +39,33 @@
                 <td>{{.Expire}}</td>
                 <td>{{.Status}}</td>
                 <td>
+                    <!-- Open a window with certificate options-->
+                    <button onclick="showOptions('{{.PublicKey}}', 'http://localhost:8080/', 'http://localhost:8080/')">View Details</button>
+
+                    <!-- Modal structure -->
+                    <div id="optionsModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); align-items:center; justify-content:center;">
+                        <div style="background:#fff; padding:20px; border-radius:8px; min-width:250px; max-width:90vw;">
+                            <h3 id="modalTitle"></h3>
+                            <button id="downloadCertBtn">Download Certificate</button>
+                            <button id="downloadPubKeyBtn">Download Public Key</button>
+                            <button onclick="closeModal()">Close</button>
+                        </div>
+                    </div>
+                    <script>
+                    function showOptions(subject, certUrl, pubKeyUrl) {
+                        document.getElementById('modalTitle').textContent = 'Public Key\n ' + subject;
+                        document.getElementById('downloadCertBtn').onclick = function() {
+                            window.location.href = certUrl;
+                        };
+                        document.getElementById('downloadPubKeyBtn').onclick = function() {
+                            window.location.href = pubKeyUrl;
+                        };
+                        document.getElementById('optionsModal').style.display = 'flex';
+                    }
+                    function closeModal() {
+                        document.getElementById('optionsModal').style.display = 'none';
+                    }
+                    </script>
                     <button onclick="alert('View details for Certificate')">View Certificate</button>
                     <button onclick="alert('Revoke Certificate')">Revoke Certificate</button>
                 </td>
@@ -59,7 +86,7 @@
             const searchInput = document.getElementById('searchInput');
             searchInput.focus();
         });
-    <script>
+    
         const searchInput = document.getElementById('searchInput');
         const table = document.getElementById('certTable').getElementsByTagName('tbody')[0];
 

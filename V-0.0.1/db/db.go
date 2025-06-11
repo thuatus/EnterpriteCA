@@ -4,6 +4,7 @@ package db
 
 import (
 	"database/sql"
+	"encoding/pem"
 	"fmt"
 	"log"
 	"time"
@@ -84,7 +85,7 @@ func GetServerCertificates() ([]DBCertInfo, error) {
 		if err := rows.Scan(&cert.Issuer, &cert.Subject, &cert.PublicKey, &date_create, &date_exp, &cert.Status); err != nil {
 			return nil, fmt.Errorf("failed to scan row: %v", err)
 		}
-		fmt.Printf("Issuer: %s, Subject: %s, Public Key: %s, Expiration: %s\n", cert.Issuer, cert.Subject, cert.PublicKey, cert.Expire)
+
 		cert.Created, err = time.Parse("2006-01-02 15:04:05", date_create)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse date: %v", err)
@@ -94,6 +95,15 @@ func GetServerCertificates() ([]DBCertInfo, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse expiration date: %v", err)
 		}
+
+		// convert public key from bytes to pem data
+		pemBlock := &pem.Block{
+			Type:  "CERTIFICATE",
+			Bytes: []byte(cert.PublicKey),
+		}
+		pemData := pem.EncodeToMemory(pemBlock)
+		// append the certificate to the slice
+		cert.PublicKey = string(pemData)
 
 		certs = append(certs, cert)
 	}
