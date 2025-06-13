@@ -10,6 +10,41 @@
         th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
         th { background-color: #f2f2f2; }
         tr.hide { display: none; }
+
+        .modal {
+      display: none;
+      position: fixed;
+      top: 30%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #444;
+      z-index: 1000;
+      width: 15%;
+      height: 20%;
+      overflow-y: auto;
+
+    }
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+    }
+    .btn {
+      padding: 8px 12px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 4px;
+      background: #0078D7;
+      color: white;
+      cursor: pointer;
+    }
+
     </style>
 </head>
 <body>
@@ -39,34 +74,22 @@
                 <td>{{.Expire}}</td>
                 <td>{{.Status}}</td>
                 <td>
-                    <!-- Open a window with certificate options-->
-                    <button onclick="showOptions('{{.PublicKey}}', 'http://localhost:8080/', 'http://localhost:8080/')">View Details</button>
+    
+                    <!-- Open a windows with a cert information -->
+                    <button onclick="alert('{{.PublicKey}}')">View Certificate</button>
 
-                    <!-- Modal structure -->
-                    <div id="optionsModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); align-items:center; justify-content:center;">
-                        <div style="background:#fff; padding:20px; border-radius:8px; min-width:250px; max-width:90vw;">
-                            <h3 id="modalTitle"></h3>
-                            <button id="downloadCertBtn">Download Certificate</button>
-                            <button id="downloadPubKeyBtn">Download Public Key</button>
-                            <button onclick="closeModal()">Close</button>
-                        </div>
-                    </div>
-                    <script>
-                    function showOptions(subject, certUrl, pubKeyUrl) {
-                        document.getElementById('modalTitle').textContent = 'Public Key\n ' + subject;
-                        document.getElementById('downloadCertBtn').onclick = function() {
-                            window.location.href = certUrl;
-                        };
-                        document.getElementById('downloadPubKeyBtn').onclick = function() {
-                            window.location.href = pubKeyUrl;
-                        };
-                        document.getElementById('optionsModal').style.display = 'flex';
-                    }
-                    function closeModal() {
-                        document.getElementById('optionsModal').style.display = 'none';
-                    }
-                    </script>
-                    <button onclick="alert('View details for Certificate')">View Certificate</button>
+                    <button onclick="showModal()">View Certificate </button>
+                    <div class="overlay" id="overlay" onclick="closeModal()"></div>
+                    <div class="modal" id="modal">
+                    <p><strong>Public Key:</strong></p>
+                    <pre id="publicKeyText">{{.PublicKey}}}}</pre>
+                    <button class="btn" onclick="copyKey()">Copiar chave</button>
+                </div>
+
+
+
+
+                    <button onclick="alert('View Private Key')">View Key</button>
                     <button onclick="alert('Revoke Certificate')">Revoke Certificate</button>
                 </td>
             </tr>
@@ -98,6 +121,24 @@
                 rows[i].classList.toggle('hide', !rowText.includes(filter));
             }
         });
+
+          function showModal() {
+    document.getElementById('modal').style.display = 'block';
+    document.getElementById('overlay').style.display = 'block';
+  }
+
+  function closeModal() {
+    document.getElementById('modal').style.display = 'none';
+    document.getElementById('overlay').style.display = 'none';
+  }
+
+  function copyKey() {
+    const text = document.getElementById('publicKeyText').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Chave copiada para a área de transferência!');
+    });
+  }
+
     </script>
 </body>
 </html>
