@@ -1,0 +1,34 @@
+<!--Form that receives the content of private key, show in a field readonly-->
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h2 align="center">View Private Key</h2>
+            <form>
+                <div class="form-group" align="center">
+                    <br>
+                    <label for="privateKey">Private Key</label><br>
+                    <textarea class="form-control" id="privateKey" rows="10" readonly>{{ .ServerKey }}</textarea>
+                
+                <!--show disclaimer with the message "save the content of private key in a file lile server.key"-->
+                
+                    <p class="text-warning">Please ensure you save the private key securely. It is essential for your server's security and should not be shared.</p>
+                    <p class="text-danger">Disclaimer: Please save the content of the private key in a file like <code>server.key</code>. This key is crucial for your server's security.</p>
+                    <button type="button" class="btn btn-primary" onclick="window.location.href='/'">Back to Home</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+    // Optional: Add any JavaScript functionality if needed
+    document.addEventListener('DOMContentLoaded', function() {
+        // Example: You can add functionality to copy the key to clipboard
+        const privateKey = document.getElementById('privateKey');
+        privateKey.addEventListener('click', function() {
+            privateKey.select();
+            document.execCommand('copy');
+            alert('Private key copied to clipboard!');
+        });
+    });
+</script>
+<!-- End of frm_view_key.html -->

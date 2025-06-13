@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"text/template"
 )
@@ -526,6 +527,42 @@ func GetServerCertificateInfo(serverName string) (CertInfo, error) {
 	}
 
 	return certInfo, nil
+}
+
+// Retirns a serverNAme of a certificate given the certificate subject
+func GetServerNameFromCert(certSubject string) (string, error) {
+
+	re := regexp.MustCompile(`CN=([^,]+)`)
+	servername := re.FindStringSubmatch(certSubject)
+	if len(servername) < 2 {
+		return "", fmt.Errorf("server name not found in certificate subject")
+	}
+	return servername[1], nil
+}
+
+// Returns Server Certificate Private Key
+func GetServerPrivateKey(serverName string) (string, error) {
+	_, fintCAPath, err := getCAInfo()
+	if err != nil {
+		log.Fatalf("Error get CA definitions: %v", err)
+		return "", err
+	}
+
+	serverKeyPath := fintCAPath + "/private/" + serverName + ".key"
+	if _, err := os.Stat(serverKeyPath); os.IsNotExist(err) {
+		log.Printf("Server private key %s does not exist.\n", serverKeyPath)
+		return "", fmt.Errorf("server private key does not exist")
+	}
+
+	// set the content of the server key file on keyContent
+	keyContent, err := os.ReadFile(serverKeyPath)
+	if err != nil {
+		log.Printf("Error reading server private key file %s: %v\n", serverKeyPath, err)
+		return "", fmt.Errorf("error reading server private key file: %v", err)
+	}
+
+	// If the key is in PEM format, return the path
+	return string(keyContent), nil
 }
 
 /*
