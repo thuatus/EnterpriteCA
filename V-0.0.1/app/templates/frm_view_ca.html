@@ -11,20 +11,20 @@
         th { background-color: #f2f2f2; }
         tr.hide { display: none; }
 
-        .modal {
-      display: none;
-      position: fixed;
-      top: 30%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px #444;
-      z-index: 1000;
-      width: 15%;
-      height: 20%;
-      overflow-y: auto;
+      .modal {
+        display: none;
+        position: fixed;
+        top: 30%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px #444;
+        z-index: 1000;
+        width: 20%;
+        height: 25%;
+        overflow-y: auto;
 
     }
     .overlay {
@@ -69,28 +69,35 @@
              {{range .}}
             <tr>
              
-                <td>{{.Subject}}</td>
+                <td id="subject_cell">{{.Subject}}</td>
                 <td>{{.Created}}</td>
                 <td>{{.Expire}}</td>
                 <td>{{.Status}}</td>
                 <td>
     
                     <!-- Open a windows with a cert information -->
-                    <button onclick="alert('{{.PublicKey}}')">View Certificate</button>
-
+                   
                     <button onclick="showModal()">View Certificate </button>
                     <div class="overlay" id="overlay" onclick="closeModal()"></div>
                     <div class="modal" id="modal">
                     <p><strong>Public Key:</strong></p>
-                    <pre id="publicKeyText">{{.PublicKey}}}}</pre>
-                    <button class="btn" onclick="copyKey()">Copiar chave</button>
+                    <pre id="publicKeyText">{{.PublicKey}}</pre>
+                    <button class="btn" onclick="copyKey()">Copy Certificate</button>
                 </div>
 
+                <!-- button -->
+                <button id="btn_view_key" class="btn btn-primary">View Key</button>
 
+                <!-- Modal -->
+                <div id="meuModal" class="modal">
+                  <div class="modal-content">
+                  <span class="close">&times;</span>
+                  <p id="key_content"></p>
+                  <button class="btn" onclick="copyKey()">Copy Key</button>
+                  </div>
+                </div>
 
-
-                    <button onclick="alert('View Private Key')">View Key</button>
-                    <button onclick="alert('Revoke Certificate')">Revoke Certificate</button>
+                <button onclick="alert('Revoke Certificate')">Revoke Certificate</button>
                 </td>
             </tr>
             {{end}}
@@ -122,7 +129,7 @@
             }
         });
 
-          function showModal() {
+  function showModal() {
     document.getElementById('modal').style.display = 'block';
     document.getElementById('overlay').style.display = 'block';
   }
@@ -135,9 +142,31 @@
   function copyKey() {
     const text = document.getElementById('publicKeyText').innerText;
     navigator.clipboard.writeText(text).then(() => {
-      alert('Chave copiada para a área de transferência!');
+      alert('Content copied to clipboard!');
     });
   }
+
+  document.getElementById("btn_view_key").addEventListener("click", function(event) {
+    event.preventDefault(); // Evita que o formulário seja enviado
+    let subject = this.parentElement.parentElement.querySelector("#subject_cell").innerText; // get value from the cell
+
+    fetch("/view_server_key/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subject })
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById("key_content").innerText = data.Server_key;
+        document.getElementById("meuModal").style.display = "block";
+    })
+    .catch(error => console.error("Erro na requisição:", error));
+});
+
+// Fechar modal
+document.querySelector(".close").addEventListener("click", function() {
+    document.getElementById("meuModal").style.display = "none";
+});
 
     </script>
 </body>
