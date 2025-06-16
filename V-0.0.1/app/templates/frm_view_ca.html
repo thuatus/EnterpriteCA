@@ -100,15 +100,16 @@
                 <td>{{.Created}}</td>
                 <td>{{.Expire}}</td>
                 <td>{{.Status}}</td>
+
                 <td>
 
                     <!-- Open a windows with a cert information -->
 
-                    <button onclick="showModal()">View Certificate </button>
+                    <button class="view-cert-btn" data-public-key="{{.PublicKey}}"> View Certificate </button>
                     <div class="overlay" id="overlay" onclick="closeModal()"></div>
                     <div class="modal" id="modal">
                         <p><strong>Public Key:</strong></p>
-                        <pre id="publicKeyText">{{.PublicKey}}</pre>
+                        <pre id="publicKeyText"></pre>
                         <button class="btn" onclick="copyCert()">Copy Certificate</button>
                     </div>
 
@@ -158,6 +159,15 @@
                 const rowText = rows[i].textContent.toLowerCase();
                 rows[i].classList.toggle('hide', !rowText.includes(filter));
             }
+        });
+
+
+        document.querySelectorAll('.view-cert-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                document.getElementById('publicKeyText').innerText = btn.getAttribute('data-public-key');
+                document.getElementById('modal').style.display = 'block';
+                document.getElementById('overlay').style.display = 'block';
+            });
         });
 
         function showModal() {
