@@ -4,6 +4,7 @@ package db
 
 import (
 	"database/sql"
+	"encoding/hex"
 	"encoding/pem"
 	"fmt"
 	"log"
@@ -96,10 +97,15 @@ func GetServerCertificates() ([]DBCertInfo, error) {
 			return nil, fmt.Errorf("failed to parse expiration date: %v", err)
 		}
 
-		// convert public key from bytes to pem data
+		// convert public key from hex to pem data
+		pubKeyBytes, err := hex.DecodeString(cert.PublicKey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode public key: %v", err)
+		}
+
 		pemBlock := &pem.Block{
 			Type:  "CERTIFICATE",
-			Bytes: []byte(cert.PublicKey),
+			Bytes: []byte(pubKeyBytes),
 		}
 		pemData := pem.EncodeToMemory(pemBlock)
 		// append the certificate to the slice
