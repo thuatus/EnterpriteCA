@@ -565,6 +565,7 @@ func GetServerPrivateKey(serverName string) (string, error) {
 	return string(keyContent), nil
 }
 
+// RevokeServerCertificate revokes a server certificate by its name
 func RevokeServerCertificate(serverName string) error {
 	_, fintCAPath, err := getCAInfo()
 	if err != nil {
