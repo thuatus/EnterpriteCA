@@ -71,6 +71,16 @@
             color: white;
             cursor: pointer;
         }
+
+        .btn-red {
+            padding: 8px 12px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 4px;
+            background: #d70000;
+            color: white;
+            cursor: pointer;
+        }
     </style>
 </head>
 
@@ -105,7 +115,7 @@
 
                     <!-- Open a windows with a cert information -->
 
-                    <button class="view-cert-btn" data-public-key="{{.PublicKey}}"> View Certificate </button>
+                    <button class="btn view-cert-btn" data-public-key="{{.PublicKey}}"> View Certificate </button>
                     <div class="overlay" id="overlay" onclick="closeModal()"></div>
                     <div class="modal" id="modal">
                         <p><strong>Public Key:</strong></p>
@@ -129,7 +139,7 @@
                         </div>
                     </div>
 
-                    <button onclick="alert('Revoke Certificate')">Revoke Certificate</button>
+                    <button class="btn-red" onclick="alert('Revoke Certificate')">Revoke Certificate</button>
                 </td>
             </tr>
             {{end}}
