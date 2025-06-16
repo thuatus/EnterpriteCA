@@ -119,3 +119,19 @@ func GetServerCertificates() ([]DBCertInfo, error) {
 	return certs, nil
 
 }
+
+// Alter information of a certificate to Rovoked in the database
+func UpdateValidCertificate(subject string) error {
+
+	if db == nil {
+		return fmt.Errorf("database connection is not established")
+	}
+
+	// Prepare the SQL query to update the certificate status
+	query := "UPDATE ca SET is_valid = 0 WHERE subject = ?"
+	_, err := db.Exec(query, subject)
+	if err != nil {
+		return fmt.Errorf("failed to update revoke certificate information: %w", err)
+	}
+	return nil
+}

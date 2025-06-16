@@ -529,7 +529,7 @@ func GetServerCertificateInfo(serverName string) (CertInfo, error) {
 	return certInfo, nil
 }
 
-// Retirns a serverNAme of a certificate given the certificate subject
+// Retirn a serverNAme of a certificate given the certificate subject
 func GetServerNameFromCert(certSubject string) (string, error) {
 
 	re := regexp.MustCompile(`CN=([^,]+)`)
@@ -540,7 +540,7 @@ func GetServerNameFromCert(certSubject string) (string, error) {
 	return servername[1], nil
 }
 
-// Returns Server Certificate Private Key
+// Return Server Certificate Private Key
 func GetServerPrivateKey(serverName string) (string, error) {
 	_, fintCAPath, err := getCAInfo()
 	if err != nil {
@@ -563,6 +563,84 @@ func GetServerPrivateKey(serverName string) (string, error) {
 
 	// If the key is in PEM format, return the path
 	return string(keyContent), nil
+}
+
+func RevokeServerCertificate(serverName string) error {
+	_, fintCAPath, err := getCAInfo()
+	if err != nil {
+		log.Fatalf("Error get CA definitions: %v", err)
+		return err
+	}
+
+	serverCertPath := fintCAPath + "/certs/" + serverName + ".crt"
+	if _, err := os.Stat(serverCertPath); os.IsNotExist(err) {
+		log.Printf("Server certificate %s does not exist.\n", serverCertPath)
+		return fmt.Errorf("server certificate does not exist")
+	}
+
+	cmd := exec.Command("openssl", "ca", "-config", fintCAPath+"/intermediateCA.cnf", "-revoke", serverCertPath, "-batch")
+	revokeInfo, err := cmd.Output()
+	if err != nil {
+		log.Fatalf("Error revoking server certificate: %v, %v", revokeInfo, err)
+		return err
+	}
+
+	fmt.Printf("Server certificate revoked: %s\n", serverCertPath)
+
+	// Generate CRL after revoking the certificate
+	crlInfo, err := GenerateCRL()
+	if err != nil {
+		log.Fatalf("Error generating CRL after revoking certificate: %v", err)
+		return err
+	}
+	fmt.Printf("CRL generated after revoking certificate: %s\n", crlInfo)
+
+	return nil
+}
+
+// Generate and update a Certificate Revocation List (CRL)
+func GenerateCRL() (string, error) {
+	_, fintCAPath, err := getCAInfo()
+	if err != nil {
+		log.Fatalf("Error get CA definitions: %v", err)
+		return "", err
+	}
+
+	crlFilePath := fintCAPath + "/crl/crl.pem"
+	cmd := exec.Command("openssl", "ca", "-config", fintCAPath+"/intermediateCA.cnf", "-gencrl", "-out", crlFilePath, "-batch")
+
+	crlInfo, err := cmd.Output()
+	if err != nil {
+		log.Fatalf("Error generating CRL: %v, %v", crlInfo, err)
+		return "", err
+	}
+
+	fmt.Printf("CRL generated: %s\n", crlFilePath)
+	return string(crlInfo), nil
+}
+
+// GetCRLInfo returns the content of the Certificate Revocation List (CRL)
+func GetCRLInfo() (string, error) {
+	_, fintCAPath, err := getCAInfo()
+	if err != nil {
+		log.Fatalf("Error get CA definitions: %v", err)
+		return "", err
+	}
+
+	crlFilePath := fintCAPath + "/crl/crl.pem"
+	if _, err := os.Stat(crlFilePath); os.IsNotExist(err) {
+		log.Printf("CRL file %s does not exist.\n", crlFilePath)
+		return "", fmt.Errorf("CRL file does not exist")
+	}
+
+	// set the content of the CRL file on crlContent
+	crlContent, err := os.ReadFile(crlFilePath)
+	if err != nil {
+		log.Printf("Error reading CRL file %s: %v\n", crlFilePath, err)
+		return "", fmt.Errorf("error reading CRL file: %v", err)
+	}
+
+	return string(crlContent), nil
 }
 
 /*
