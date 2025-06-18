@@ -139,7 +139,7 @@
                         </div>
                     </div>
 
-                    <button class="btn-red" onclick="alert('Revoke Certificate')">Revoke Certificate</button>
+                    <button class="btn-red revoke-btn" data-subject="{{.Subject}}">Revoke Certificate</button>
                 </td>
             </tr>
             {{end}}
@@ -234,6 +234,26 @@
                 alert('Content copied to clipboard!');
             });
         }
+
+        // Send Request to revoke certificate
+        document.querySelectorAll('.revoke-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        const subject = btn.getAttribute('data-subject');
+        fetch('/revoke_cert/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ subject })
+        })
+        .then(response => {
+            if (response.ok) {
+                alert('Success on revoke certificate');
+            } else {
+                alert('Failed to revoke certificate');
+            }
+        })
+        .catch(() => alert('Error communicating with server'));
+    });
+});
 
 
 

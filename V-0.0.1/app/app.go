@@ -628,6 +628,58 @@ func ViewServerPrivateKey(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// Handle CErtificate Revocation Request
+func HandleRevokeCertificate(w http.ResponseWriter, r *http.Request) {
+	// Handle the certificate revocation request
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		log.Println("Method not allowed for revoking certificate")
+		return
+	}
+
+	// Extract the certificate subject from the form
+	var requestData map[string]string
+	err := json.NewDecoder(r.Body).Decode(&requestData)
+	if err != nil {
+		http.Error(w, "Error on process request", http.StatusBadRequest)
+		log.Println("Error decoding request body:", err)
+		return
+	}
+
+	subject := requestData["subject"]
+	if subject == "" {
+		http.Error(w, "Subject cant be empty", http.StatusBadRequest)
+		log.Println("Subject is empty in the request data")
+		return
+	}
+
+	serverName, err := ca.GetServerNameFromCert(subject)
+	if err != nil {
+		log.Println("Error getting server name from certificate:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	err = ca.RevokeServerCertificate(serverName)
+	if err != nil {
+		log.Println("Error revoking certificate:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	log.Println("Certificate revoked successfully for subject:", subject)
+
+	err = db.UpdateValidCertificate(subject)
+	if err != nil {
+		log.Println("Error updating valid certificate in database:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintln(w, "Certificate revoked successfully")
+}
+
 // main function to start the web server
 func main() {
 	// Create a new http.ServeMux
@@ -683,6 +735,9 @@ func main() {
 
 	// Register the handler for viewing server private keys
 	mux.Handle("/view_server_key/", (ChainMiddleware(ViewServerPrivateKey, Logging(), checkSession())))
+
+	//REgister the handler for revoking certificates
+	mux.Handle("/revoke_cert/", (ChainMiddleware(HandleRevokeCertificate, Logging(), checkSession())))
 
 	// Start the server
 	err := http.ListenAndServe(":8080", mux)

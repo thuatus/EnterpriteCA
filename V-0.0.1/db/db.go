@@ -71,7 +71,7 @@ func GetServerCertificates() ([]DBCertInfo, error) {
 	if db == nil {
 		return nil, fmt.Errorf("database connection is not established")
 	}
-	query := "SELECT issuer, subject, public_key, created, expiration, is_valid FROM ca"
+	query := "SELECT issuer, subject, public_key, created, expiration, is_valid FROM ca where is_valid = 1"
 	rows, err := db.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve certificates: %v", err)
@@ -123,13 +123,15 @@ func GetServerCertificates() ([]DBCertInfo, error) {
 // Alter information of a certificate to Rovoked in the database
 func UpdateValidCertificate(subject string) error {
 
-	if db == nil {
-		return fmt.Errorf("database connection is not established")
+	db, err := ConnectDB()
+	if err != nil {
+		return fmt.Errorf("failed to connect to database: %w", err)
 	}
+	defer db.Close()
 
 	// Prepare the SQL query to update the certificate status
 	query := "UPDATE ca SET is_valid = 0 WHERE subject = ?"
-	_, err := db.Exec(query, subject)
+	_, err = db.Exec(query, subject)
 	if err != nil {
 		return fmt.Errorf("failed to update revoke certificate information: %w", err)
 	}
