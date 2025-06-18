@@ -120,7 +120,7 @@ func CreateConfigFiles(caPath string, country string, state string, local string
 		return "", err
 	}
 
-	if _, err := crlFile.WriteString("100"); err != nil {
+	if _, err := crlFile.WriteString("0100"); err != nil {
 		log.Fatalf("Error writing crlCA file: %v", err)
 		return "", err
 	}
