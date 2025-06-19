@@ -678,6 +678,9 @@ func HandleRevokeCertificate(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintln(w, "Certificate revoked successfully")
+
+	log.Println("Certificate revoked successfully for subject:", subject)
+	http.Redirect(w, r, "/view_cert/", http.StatusSeeOther)
 }
 
 // main function to start the web server

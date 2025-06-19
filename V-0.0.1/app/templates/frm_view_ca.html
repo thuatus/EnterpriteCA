@@ -236,24 +236,30 @@
         }
 
         // Send Request to revoke certificate
-        document.querySelectorAll('.revoke-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-        const subject = btn.getAttribute('data-subject');
-        fetch('/revoke_cert/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ subject })
-        })
-        .then(response => {
-            if (response.ok) {
-                alert('Success on revoke certificate');
-            } else {
-                alert('Failed to revoke certificate');
-            }
-        })
-        .catch(() => alert('Error communicating with server'));
-    });
-});
+        document.querySelectorAll('.revoke-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                // include a confirmation dialog
+
+                const subject = btn.getAttribute('data-subject');
+
+                if (!confirm(`Are you sure you want to revoke this certificate: ${subject}?`)) {
+                    return; // If the user cancels, do nothing
+                }
+                fetch('/revoke_cert/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ subject })
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            alert('Success on revoke certificate');
+                        } else {
+                            alert('Failed to revoke certificate');
+                        }
+                    })
+                    .catch(() => alert('Error communicating with server'));
+            });
+        });
 
 
 
