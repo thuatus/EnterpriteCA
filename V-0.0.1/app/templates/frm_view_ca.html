@@ -4,6 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <title>Certificate Information</title>
+    <!--include css file styles.css-->
+    
+    <link rel="stylesheet" href="/static/css/styles.css">
+
+    <!--
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -82,7 +87,11 @@
             cursor: pointer;
         }
     </style>
+-->
 </head>
+<header>
+    <h1>EnterpriteCA</h1>
+</header>
 
 <body>
     <h2>Certificate Information</h2>
@@ -101,6 +110,7 @@
                 <th>Actions</th>
             </tr>
         </thead>
+
         <tbody>
 
             {{range .}}
@@ -150,8 +160,9 @@
     </table>
     <!-- include button to back to /-->
     <div align="center" style="margin-top: 20px;">
-        <button onclick="window.location.href='/'">Home</button>
+        <button class="btn" onclick="window.location.href='/'">Home</button>
     </div>
+<!--
     <script>
         // This script is for the search functionality
         document.addEventListener('DOMContentLoaded', function () {
@@ -293,6 +304,12 @@
 
 
     </script>
+-->
+<script src="/static/script/script_view_ca.js"></script>
 </body>
+
+<footer>
+    <p>&copy; 2025 EnterpriteCA</p>
+</footer>
 
 </html>

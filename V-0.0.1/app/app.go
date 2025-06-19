@@ -707,7 +707,8 @@ func main() {
 	// file Server to serve static files
 	mux.HandleFunc("/static/", Logging()(func(w http.ResponseWriter, r *http.Request) {
 
-		http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))).ServeHTTP(w, r)
+		http.StripPrefix("/static", http.FileServer(http.Dir("./static"))).ServeHTTP(w, r)
+		fmt.Println("Serving static content")
 
 	}))
 
