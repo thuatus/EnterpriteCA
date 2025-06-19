@@ -15,9 +15,9 @@
                 alert('Server name can only contain letters, numbers, dots, and hyphens.');
                 return false;
             }
-            if (!serverName.endsWith('.com') &&
-                !serverName.endsWith('.org') &&
-                !serverName.endsWith('.net')) {
+            if (!serverName.includes('.com') &&
+                !serverName.includes('.org') &&
+                !serverName.includes('.net')) {
                 alert('Server name must end with .com, .org, or .net.');
                 return false;
             }

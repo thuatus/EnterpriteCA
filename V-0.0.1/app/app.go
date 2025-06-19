@@ -744,9 +744,16 @@ func main() {
 	mux.Handle("/revoke_cert/", (ChainMiddleware(HandleRevokeCertificate, Logging(), checkSession())))
 
 	// Start the server
-	err := http.ListenAndServe(":8080", mux)
+	/*err := http.ListenAndServe(":8080", mux)
 	// Log the error if any
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Failed to start HTTP Server: %v", err)
+	}
+	*/
+	certPath := "/home/alvaro/srv/CA/Enterprise_Private_CA/intermediateCA/certs/server.crt"
+	keyPath := "/home/alvaro/srv/CA/Enterprise_Private_CA/intermediateCA/private/server.key"
+	err := http.ListenAndServeTLS(":8443", certPath, keyPath, mux)
+	if err != nil {
+		log.Fatalf("Failed to start HTTPS server: %v", err)
 	}
 }
