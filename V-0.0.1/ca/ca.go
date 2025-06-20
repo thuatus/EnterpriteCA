@@ -1,4 +1,10 @@
-// Implements ca basics apis
+/*
+Package ca provides a set of functions to manage a Public Key Infrastructure (PKI) using OpenSSL.
+It includes utilities for creating CA and intermediate CA directories, generating configuration files,
+issuing and revoking certificates, generating certificate signing requests (CSRs), managing private keys,
+and handling certificate revocation lists (CRLs). The package is designed to automate and simplify
+the process of certificate authority management for secure communications.
+*/
 package ca
 
 import (
@@ -87,7 +93,7 @@ func CreatePKIFolders(caName string) (string, string, error) {
 	return caPath, intermediateCAPath, nil
 }
 
-// create cnf files to PKI
+// Create cnf files to PKI
 func CreateConfigFiles(caPath string, country string, state string, local string, organization string, organizationalUnit string) (string, error) {
 
 	// structure that store cnf config parameters
@@ -236,7 +242,7 @@ func CreateConfigFiles(caPath string, country string, state string, local string
 	return fileCAConfig.Name() + "\n" + fileIntConfig.Name(), nil
 }
 
-// get the CA folder info
+// Get the CA folder info
 func getCAInfo() (string, string, error) {
 
 	// Lê o conteúdo do arquivo
@@ -253,7 +259,7 @@ func getCAInfo() (string, string, error) {
 	return paths[0], paths[1], nil
 }
 
-// returns the Informnation about the Intermediate CA
+// Return the informnation about the Intermediate CA
 func GetIntermediateCAInfo() (CertInfo, error) {
 	// Lê o conteúdo do arquivo
 	IntCAInfo, err := os.ReadFile("/home/alvaro/srv/CA/definitions.txt")
@@ -303,7 +309,7 @@ func GetIntermediateCAInfo() (CertInfo, error) {
 	return certInfo, nil
 }
 
-// Creates CA certificate, private key and public key
+// Create CA certificate, private key and public key
 func CreateCACertificate(caPathName string) (string, error) {
 	caCertificate := caPathName + "/ca.crt"
 	caPrivateKey := caPathName + "/ca.key"
@@ -358,7 +364,7 @@ func CreateCACertificate(caPathName string) (string, error) {
 	return string(caKeyinfo) + "|" + string(caCertinfo), nil
 }
 
-// Generates a private key for a server certificate file
+// Generate a private key for a server certificate file
 func GenerateServerKey(serverName string) (string, error) {
 
 	_, keyPath, err := getCAInfo()
@@ -383,7 +389,7 @@ func GenerateServerKey(serverName string) (string, error) {
 	return serverKeyPath, nil
 }
 
-// Generates a Certificate Signing Request (CSR) for a server certificate file
+// Generate a Certificate Signing Request (CSR) for a server certificate file
 func GenerateCSR(serverName string) (string, error) {
 
 	serverCertinfo, err := GetIntermediateCAInfo()
@@ -485,7 +491,7 @@ func IssueServerCertificate(ServerName string, csr io.Reader) (string, error) {
 	return string(serverCertinfo), nil
 }
 
-// return server certificate information
+// Return server certificate information
 func GetServerCertificateInfo(serverName string) (CertInfo, error) {
 	_, fintCAPath, err := getCAInfo()
 	if err != nil {
@@ -529,7 +535,7 @@ func GetServerCertificateInfo(serverName string) (CertInfo, error) {
 	return certInfo, nil
 }
 
-// Retirn a serverNAme of a certificate given the certificate subject
+// Return a server name of a certificate given the certificate subject
 func GetServerNameFromCert(certSubject string) (string, error) {
 
 	re := regexp.MustCompile(`CN=([^,]+)`)

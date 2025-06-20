@@ -1,3 +1,7 @@
+// Package db provides database access and management functions for the Certificate Authority (CA) application.
+// It includes functionality to connect to a MySQL database, add and retrieve certificate information, and update
+// certificate validity status. The package defines the DBCertInfo type to represent certificate records and
+// handles conversion between database representations and application data structures.
 package db
 
 // provides database access for the CA application
@@ -47,7 +51,7 @@ func ConnectDB() (*sql.DB, error) {
 
 }
 
-// add certificate information to the database
+// Add certificate information to the database
 func AddCertificate(cert DBCertInfo) error {
 	// AddCertificate adds a certificate to the database
 	if db == nil {
@@ -64,8 +68,7 @@ func AddCertificate(cert DBCertInfo) error {
 
 }
 
-// Retrieves Certificates from the database by its subject
-
+// Retrieve Certificates from the database by its subject
 func GetServerCertificates() ([]DBCertInfo, error) {
 
 	if db == nil {

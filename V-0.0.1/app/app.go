@@ -1,3 +1,21 @@
+// Package main implements a web interface application to manage a Public Key Infrastructure (PKI).
+//
+// This application provides functionality for initializing a Certificate Authority (CA),
+// managing users, issuing and revoking certificates, and viewing certificate information
+// through a web interface. It uses Gorilla sessions for session management, bcrypt for
+// password hashing, and interacts with a database for storing user and certificate data.
+//
+// The main features include:
+//
+//   - Initial CA setup and configuration via web forms.
+//   - Admin user creation and authentication.
+//   - Session management with expiration checks.
+//   - Issuing, viewing, and revoking server certificates.
+//   - Secure handling of private keys and certificate data.
+//   - Logging of requests and actions for auditing purposes.
+//
+// The application is structured around HTTP handlers, middleware for logging and session
+// validation, and utility functions for PKI and database operations.
 package main
 
 // Web interface application to manager PKI
@@ -58,6 +76,7 @@ func Logging() Middleware {
 	}
 }
 
+// Check if the initial configuration was made before
 func checkInitialSettings() (bool, error) {
 	// Check if the initial settings are set
 	// If not, return false and an error
@@ -73,6 +92,7 @@ func checkInitialSettings() (bool, error) {
 	return true, nil
 }
 
+// Handle initiation CA process, based on user input
 func FormInitialSettings(w http.ResponseWriter, _ *http.Request) {
 	// Create the initial CA settings - form  - PKI and admin web console user
 	// If not, return an error
@@ -111,6 +131,7 @@ func FormInitialSettings(w http.ResponseWriter, _ *http.Request) {
 
 }
 
+// Handle the initial setting of PKI configuration
 func ApplyInitialSettings(w http.ResponseWriter, r *http.Request) {
 	// Apply the initial settings
 	// If not, return an error
@@ -169,6 +190,7 @@ func ApplyInitialSettings(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// Creates Admin User account
 func createAdminUser(usr string, passwd string) error {
 	// Create the admin user for the web console
 	// This is where you would create the necessary user for the web console
@@ -192,6 +214,7 @@ func createAdminUser(usr string, passwd string) error {
 	return nil
 }
 
+// Handle the user input for create a admin account
 func handleAdminUser(w http.ResponseWriter, r *http.Request) {
 	// Handle the admin user creatio
 	if r.Method != http.MethodPost {
@@ -239,7 +262,7 @@ func handleAdminUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// authenticate user credentials
+// Authenticate user credentials
 func authenticateUser(w http.ResponseWriter, r *http.Request) {
 	// Handle the login request
 	if r.Method != http.MethodPost {
@@ -336,7 +359,7 @@ func authenticateUser(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-// checkSession checks if the user is authenticated and the session is valid
+// CheckSession checks if the user is authenticated and the session is valid
 func checkSession() Middleware {
 	return func(f http.HandlerFunc) http.HandlerFunc {
 
@@ -384,6 +407,7 @@ func checkSession() Middleware {
 	}
 }
 
+// Apply Midware chain of functions to enforce log, check auth and the execution of especified function
 func ChainMiddleware(f http.HandlerFunc, middlewares ...Middleware) http.HandlerFunc {
 	for _, m := range middlewares {
 		f = m(f)
@@ -391,7 +415,7 @@ func ChainMiddleware(f http.HandlerFunc, middlewares ...Middleware) http.Handler
 	return f
 }
 
-// handle the certificate issuance request form
+// Handle the certificate issuance request form
 func IssueCertHandler(w http.ResponseWriter, r *http.Request) {
 
 	// RETURN TEMPLATE FOR THE FORM
@@ -543,7 +567,7 @@ func CreateServerCert(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// hndle the view ca form, set up a template view
+// Handle the view ca form, set up a template view
 func ViewCertificateForm(w http.ResponseWriter, r *http.Request) {
 	// Serve the view certificate form
 	template, err := template.ParseFiles("templates/frm_view_ca.html")
@@ -740,7 +764,7 @@ func main() {
 	// Register the handler for viewing server private keys
 	mux.Handle("/view_server_key/", (ChainMiddleware(ViewServerPrivateKey, Logging(), checkSession())))
 
-	//REgister the handler for revoking certificates
+	//Register the handler for revoking certificates
 	mux.Handle("/revoke_cert/", (ChainMiddleware(HandleRevokeCertificate, Logging(), checkSession())))
 
 	// Start the server
