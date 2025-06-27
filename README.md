@@ -22,3 +22,12 @@ The purpose of this project is to learn Go and apply that knowledge in a real-wo
    ```bash
    git clone https://github.com/yourusername/EnterpriteCA.git
    cd EnterpriteCA
+
+   Execute the image
+```
+   podman run -e MYSQL_DATABASE=<db Name> \
+           -e MYSQL_USER=<user> \
+           -e MYSQL_PASSWORD=<passwd> \
+           -e MYSQL_ROOT_PASSWORD=<password> \
+           eterpriteca
+```

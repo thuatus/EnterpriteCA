@@ -51,7 +51,6 @@ var (
 	store = sessions.NewCookieStore(key)
 )
 
-var tlsEnabled = false
 var appCertPath = "/home/alvaro/srv/CA/Enterprise_Private_CA/intermediateCA/certs/server.crt"
 var appKeyPath = "/home/alvaro/srv/CA/Enterprise_Private_CA/intermediateCA/private/server.key"
 
@@ -93,8 +92,7 @@ func checkInitialSettings() (bool, error) {
 		return false, err
 	}
 	// set tlsEnabled to true if the CA folders exist
-	tlsEnabled = true
-	log.Println("Initial settings found, TLS enabled:", tlsEnabled)
+
 	return true, nil
 }
 
@@ -188,32 +186,6 @@ func ApplyInitialSettings(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Println("Initial settings applied successfully")
-
-	// Create server certificate to the own application
-	serverName := "enterptiteca.app.com"
-	csr, err := ca.GenerateCSR(serverName)
-	if err != nil {
-		log.Println("Error generating server app CSR:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-
-	csrFile, err := os.Open(csr)
-	if err != nil {
-		log.Println("Error opening server app CSR file:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-	defer csrFile.Close()
-	// Create the server certificate
-	_, err = ca.IssueServerCertificate(serverName, csrFile)
-	if err != nil {
-		log.Println("Error creating app server certificate:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-	log.Println("App Server certificate created successfully for:", serverName)
-	tlsEnabled = true
 
 	// Redirect to the main page or show a success message
 	//http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -807,28 +779,11 @@ func main() {
 	}
 	*/
 
-	if tlsEnabled {
-		err := http.ListenAndServeTLS(":8443", appCertPath, appKeyPath, mux)
-		if err != nil {
-			log.Fatalf("Failed to start HTTPS server: %v", err)
-		}
-	} else {
-		err := http.ListenAndServe(":8080", mux)
-		if err != nil {
-			log.Printf("Failed to start HTTP server.: %v", err)
-			log.Println("Starting server on port 8443 with TLS enabled")
-			// rediret to HTTPS server
-			if tlsEnabled {
-				err = http.ListenAndServeTLS(":8443", appCertPath, appKeyPath, mux)
-				// Log the error if any
-				// If the server is not able to start, log the error and exit
-
-				if err != nil {
-					log.Fatalf("Failed to to redirect HTTPS server: %v", err)
-				}
-			}
-		}
+	err := http.ListenAndServeTLS(":8443", appCertPath, appKeyPath, mux)
+	if err != nil {
+		log.Fatalf("Failed to start HTTPS server: %v", err)
 	}
-	log.Println("Server started on port 8080 or 8443 with TLS enabled")
-	log.Println("Visit http://localhost:8080 or https://localhost:8443 to access")
+
+	log.Println("Server started on 8443 with TLS enabled")
+	log.Println("Visit  https://localhost:8443 to access")
 }

@@ -1,8 +1,0 @@
-# Image form alpine
-FROM alpine:latest
-
-# Update SO and install required packages
-RUN apk update && apk add --no-cache openssl openssh audit
-
-RUN mkdir /srv/CA
-
