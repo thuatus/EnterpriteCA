@@ -19,22 +19,23 @@ RUN mkdir /srv/CA /srv/ssl /srv/app
 RUN openssl req -x509 -newkey rsa:4096 -keyout /srv/ssl/app.key -out /srv/ssl/app.crt -days 365 -nodes -subj "/CN=enterprise.app.com"
 
 # Copy the application files to the container folder
-COPY ../db/scriptCreateStrcture.sql /srv/app/scriptCreateStrcture.sql
+COPY scriptCreateStructure.sql /srv/app/scriptCreateStructure.sql
 
 # Initialize the database
-RUN chown -R mysql:mysql /srv/app/scriptCreateStrcture.sql
-RUN chmod 644 /srv/app/scriptCreateStrcture.sql
+RUN chown -R mysql:mysql /srv/app/scriptCreateStructure.sql
+RUN chmod 644 /srv/app/scriptCreateStructure.sql
 RUN mysql_install_db --user=mysql --basedir=/usr --datadir=/var/lib/mysql
 
 # copy entrypoint script
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Expõe a porta padrão do MariaDB
-EXPOSE 3306
+
 
 # Defines o entrypoint
 ENTRYPOINT ["/entrypoint.sh"]
+
+
 
 #Run sql script to create the database structure
 COPY scriptCreateStructure.sql /docker-entrypoint-initdb.d/

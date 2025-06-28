@@ -21,15 +21,23 @@ if [ ! -d "/var/lib/mysql/mysql" ]; then
 EOSQL
 fi
 
+echo "🔧 Starting MariaDB server in backgound..."
+mysqld --user=mysql --datadir=/var/lib/mysql --skip-networking &
+pid="$!"
+
+sleep 30
+# Check if the database is already initialized and setup
+for f in /docker-entrypoint-initdb.d/*.sql; do
+    if [ -f "$f" ]; then
+        echo "🔧 Importing SQL schema $f..."
+        mysql -u root -p="${ROOT_PASS}" <"$f"
+
+    fi
+done
+
+sleep 5
+# Stop the temporary MariaDB server
+mysqladmin -u root -p"${ROOT_PASS}" shutdown
+
 # Start MariaDB normally
 exec mysqld --user=mysql --datadir=/var/lib/mysql
-
-
-# Routine do initialize and setup the database
-if [ ! -d "/var/lib/mysql/mysql" ]; then
-    echo "🔧 Inicializando banco de dados..."
-    mysql_install_db --user=mysql --basedir=/usr --datadir=/var/lib/mysql
-
-    # O MariaDB executará automaticamente os scripts em /docker-entrypoint-initdb.d
-fi
-
