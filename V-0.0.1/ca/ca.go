@@ -36,7 +36,7 @@ type CertInfo struct {
 // Creates folders and files structure
 func CreatePKIFolders(caName string) (string, string, error) {
 
-	rootPath := "/home/alvaro/srv/CA/"
+	rootPath := "/srv/CA/"
 	intermediateCaName := "intermediateCA"
 	caPath := rootPath + caName
 	intermediateCAPath := caPath + "/" + intermediateCaName
@@ -227,7 +227,7 @@ func CreateConfigFiles(caPath string, country string, state string, local string
 		return "", err
 	}
 
-	defFilePath := "/home/alvaro/srv/CA/definitions.txt"
+	defFilePath := "/srv/CA/definitions.txt"
 	defFile, err := os.Create(defFilePath)
 	if err != nil {
 		log.Fatalf("Error creating definition file: %v", err)
@@ -246,7 +246,7 @@ func CreateConfigFiles(caPath string, country string, state string, local string
 func getCAInfo() (string, string, error) {
 
 	// Lê o conteúdo do arquivo
-	caInfo, err := os.ReadFile("/home/alvaro/srv/CA/definitions.txt")
+	caInfo, err := os.ReadFile("/srv/CA/definitions.txt")
 	if err != nil {
 		fmt.Printf("can't read file %v\n", err)
 		return "", "", err
@@ -262,7 +262,7 @@ func getCAInfo() (string, string, error) {
 // Return the informnation about the Intermediate CA
 func GetIntermediateCAInfo() (CertInfo, error) {
 	// Lê o conteúdo do arquivo
-	IntCAInfo, err := os.ReadFile("/home/alvaro/srv/CA/definitions.txt")
+	IntCAInfo, err := os.ReadFile("/srv/CA/definitions.txt")
 	if err != nil {
 		fmt.Printf("can't read file %v\n", err)
 		return CertInfo{}, fmt.Errorf("can not read the intca file: %v", err)

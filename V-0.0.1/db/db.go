@@ -12,6 +12,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/go-sql-driver/mysql"
@@ -34,7 +35,7 @@ func ConnectDB() (*sql.DB, error) {
 
 	cfg := mysql.NewConfig()
 	cfg.User = "root"
-	cfg.Passwd = "passwd@G0"
+	cfg.Passwd = os.Getenv("MYSQL_ROOT_PASSWORD")
 	cfg.Net = "tcp"
 	cfg.Addr = "127.0.0.1:3306"
 	cfg.DBName = "ca"

@@ -40,4 +40,8 @@ sleep 5
 mysqladmin -u root -p"${ROOT_PASS}" shutdown
 
 # Start MariaDB normally
-exec mysqld --user=mysql --datadir=/var/lib/mysql
+mysqld --user=mysql --datadir=/var/lib/mysql
+
+# Start Go application
+
+exec /srv/app/enterpriteca

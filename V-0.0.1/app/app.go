@@ -27,7 +27,6 @@ import (
 	"fmt"
 	"html/template"
 	"log"
-	"log/syslog"
 	"net/http"
 	"os"
 	"regexp"
@@ -51,8 +50,8 @@ var (
 	store = sessions.NewCookieStore(key)
 )
 
-var appCertPath = "/home/alvaro/srv/CA/Enterprise_Private_CA/intermediateCA/certs/server.crt"
-var appKeyPath = "/home/alvaro/srv/CA/Enterprise_Private_CA/intermediateCA/private/server.key"
+var appCertPath = "/srv/ssl/app.crt"
+var appKeyPath = "/srv/ssl/app.key"
 
 // Logging logs all requests with its path and the time it took to process
 func Logging() Middleware {
@@ -66,12 +65,7 @@ func Logging() Middleware {
 			// register the request
 			start := time.Now()
 			defer func() { log.Println(r.RemoteAddr, r.Method, r.URL.Path, time.Since(start)) }()
-			logWriter, err := syslog.New(syslog.LOG_INFO, "EnterpriteCA")
-			if err != nil {
-				log.Printf("Failed to connect to syslog: %v", err)
-			} else {
-				log.SetOutput(logWriter)
-			}
+			log.SetOutput(os.Stdout)
 
 			// Call the next middleware/handler in chain
 			f(w, r)
@@ -84,7 +78,7 @@ func checkInitialSettings() (bool, error) {
 	// Check if the initial settings are set
 	// If not, return false and an error
 	// If yes, return true and nil
-	_, err := os.Stat("/home/alvaro/srv/CA/")
+	_, err := os.Stat("/srv/CA/")
 	if os.IsNotExist(err) {
 		return false, err
 	}
@@ -368,6 +362,18 @@ func checkSession() Middleware {
 	return func(f http.HandlerFunc) http.HandlerFunc {
 
 		return func(w http.ResponseWriter, r *http.Request) {
+			//check if the initial settings were made
+			_, err := checkInitialSettings()
+			if err != nil {
+				log.Println("Initial settings not found, redirecting to form:", err)
+				FormInitialSettings(w, r)
+
+				log.Println("Redirecting to first login page")
+
+				http.ServeFile(w, r, "./static/first_login.html")
+				return
+			}
+
 			// Check if the session exists
 			session, err := store.Get(r, "session-token")
 			if err != nil {
@@ -717,16 +723,6 @@ func main() {
 	mux := http.NewServeMux()
 	// Register the logging middleware
 	mux.HandleFunc("/", Logging()(checkSession()(func(w http.ResponseWriter, r *http.Request) {
-		_, err := checkInitialSettings()
-		if err != nil {
-			log.Println("Initial settings not found, redirecting to form:", err)
-			FormInitialSettings(w, r)
-
-			log.Println("Redirecting to first login page")
-
-			// http.ServeFile(w, r, "./static/first_login.html")
-			return
-		}
 
 		fmt.Println("Initial settings found, serving main page")
 		http.ServeFile(w, r, "index.html")

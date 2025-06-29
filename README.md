@@ -25,9 +25,9 @@ The purpose of this project is to learn Go and apply that knowledge in a real-wo
 
    Execute the image
 ```
-   podman run -e MYSQL_DATABASE=<db Name> \
-           -e MYSQL_USER=<user> \
-           -e MYSQL_PASSWORD=<passwd> \
-           -e MYSQL_ROOT_PASSWORD=<password> \
+   podman run -e MYSQL_DATABASE=ca \
+           -e MYSQL_USER=admin \
+           -e MYSQL_PASSWORD=123456 \
+           -e MYSQL_ROOT_PASSWORD=passwd@G0 \
            eterpriteca
 ```

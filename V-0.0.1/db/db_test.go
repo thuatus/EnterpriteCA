@@ -19,6 +19,16 @@ var testCert = DBCertInfo{
 	Expire:    time.Now().Add(365 * 24 * time.Hour),
 }
 
+func TestConnectDB(t *testing.T) {
+	// Connect to the database
+	db, err := ConnectDB()
+	assert.NoError(t, err, "ConnectDB should not return an error")
+	assert.NotNil(t, db, "Database connection should not be nil")
+
+	// Close the database connection
+	err = db.Close()
+	assert.NoError(t, err, "Closing the database connection should not return an error")
+}
 func TestAddAndGetCertificate(t *testing.T) {
 	// Add certificate
 	db, _ := ConnectDB()
