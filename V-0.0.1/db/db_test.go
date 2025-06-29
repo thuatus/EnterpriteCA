@@ -59,3 +59,17 @@ func TestRevokeCertificate(t *testing.T) {
 	err := UpdateValidCertificate(testCert.Subject)
 	assert.NoError(t, err, "RevokeCertificate should not return an error")
 }
+
+// teste add user
+func TestAddUser(t *testing.T) {
+	// Connect to the database
+	db, err := ConnectDB()
+	assert.NoError(t, err, "ConnectDB should not return an error")
+	assert.NotNil(t, db, "Database connection should not be nil")
+	defer db.Close()
+
+	// Add a user
+	err = AddUser("testuser", "testpasswordtyrytry")
+	assert.NoError(t, err, "AddUser should not return an error")
+
+}

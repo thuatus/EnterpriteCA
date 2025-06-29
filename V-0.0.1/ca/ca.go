@@ -42,6 +42,7 @@ func CreatePKIFolders(caName string) (string, string, error) {
 	intermediateCAPath := caPath + "/" + intermediateCaName
 	certsFolderPath := intermediateCAPath + "/certs"
 	csrFOlderPath := intermediateCAPath + "/csr"
+	privateFolderPath := intermediateCAPath + "/private"
 	crlFolderPath := intermediateCAPath + "/crl"
 	fmt.Printf("folder path: %v\n", caPath)
 	infoDir, err := os.Stat(caPath)
@@ -82,6 +83,12 @@ func CreatePKIFolders(caName string) (string, string, error) {
 			log.Fatalf("Can't crs ca folder %v: %d", csrFOlderPath, err)
 			return "", "", err
 		}
+		err = os.MkdirAll(intermediateCAPath+"/private", 0700)
+		if err != nil {
+			log.Fatalf("Can't private ca folder %v: %d", privateFolderPath, err)
+			return "", "", err
+		}
+
 		err = os.MkdirAll(crlFolderPath, 0700)
 		if err != nil {
 			log.Fatalf("Can't crl folder %v: %d", crlFolderPath, err)
@@ -161,7 +168,7 @@ func CreateConfigFiles(caPath string, country string, state string, local string
 		return "", err
 	}
 
-	if _, err := crlIntCAFile.WriteString("100"); err != nil {
+	if _, err := crlIntCAFile.WriteString("0100"); err != nil {
 		log.Fatalf("Error writing crlCA file: %v", err)
 		return "", err
 	}

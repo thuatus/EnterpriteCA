@@ -188,30 +188,6 @@ func ApplyInitialSettings(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// Creates Admin User account
-func createAdminUser(usr string, passwd string) error {
-	// Create the admin user for the web console
-	// This is where you would create the necessary user for the web console
-	// For now, we will just log the action
-	log.Println("Conecting to the database...")
-	dbConn, err := db.ConnectDB()
-
-	if err != nil {
-		log.Println("Error connecting to the database:", err)
-		return err
-	}
-	defer dbConn.Close()
-
-	//  create the admin user
-	_, err = dbConn.Exec("INSERT INTO ca.users (name, passwd, active ) VALUES (?, ?, ?)", usr, passwd, 1)
-	if err != nil {
-		log.Println("Error inserting admin user into the database:", err)
-		return err
-	}
-
-	return nil
-}
-
 // Handle the user input for create a admin account
 func handleAdminUser(w http.ResponseWriter, r *http.Request) {
 	// Handle the admin user creatio
@@ -247,7 +223,7 @@ func handleAdminUser(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Create the admin user
-		err = createAdminUser(username, string(hash))
+		err = db.AddUser(username, string(hash))
 		if err != nil {
 			log.Println("Error creating admin user:", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -357,22 +333,37 @@ func authenticateUser(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
+func checkInitialSettingsMiddleware() Middleware {
+	// Middleware to check if the initial settings have been applied
+	return func(f http.HandlerFunc) http.HandlerFunc {
+
+		return func(w http.ResponseWriter, r *http.Request) {
+			// Check if the initial settings have been applied
+			//check if the initial settings were made
+			_, err := checkInitialSettings()
+			if err != nil {
+				log.Println("Initial settings not found, redirecting to form:", err)
+				fmt.Println("Initial settings not found, redirecting to form:", err)
+				FormInitialSettings(w, r)
+
+				log.Println("Redirecting to first login page")
+				fmt.Println("Redirecting to first login page")
+
+				http.ServeFile(w, r, "./static/first_login.html")
+				return
+			}
+
+			// Call the next middleware/handler in chain
+			f(w, r)
+		}
+	}
+}
+
 // CheckSession checks if the user is authenticated and the session is valid
 func checkSession() Middleware {
 	return func(f http.HandlerFunc) http.HandlerFunc {
 
 		return func(w http.ResponseWriter, r *http.Request) {
-			//check if the initial settings were made
-			_, err := checkInitialSettings()
-			if err != nil {
-				log.Println("Initial settings not found, redirecting to form:", err)
-				FormInitialSettings(w, r)
-
-				log.Println("Redirecting to first login page")
-
-				http.ServeFile(w, r, "./static/first_login.html")
-				return
-			}
 
 			// Check if the session exists
 			session, err := store.Get(r, "session-token")
@@ -722,11 +713,15 @@ func main() {
 	// Create a new http.ServeMux
 	mux := http.NewServeMux()
 	// Register the logging middleware
-	mux.HandleFunc("/", Logging()(checkSession()(func(w http.ResponseWriter, r *http.Request) {
-
-		fmt.Println("Initial settings found, serving main page")
-		http.ServeFile(w, r, "index.html")
-	})))
+	mux.HandleFunc("/", ChainMiddleware(
+		func(w http.ResponseWriter, r *http.Request) {
+			fmt.Println("Initial settings found, serving main page")
+			http.ServeFile(w, r, "index.html")
+		},
+		Logging(),
+		checkInitialSettingsMiddleware(),
+		checkSession(),
+	))
 
 	// file Server to serve static files
 	mux.HandleFunc("/static/", Logging()(func(w http.ResponseWriter, r *http.Request) {

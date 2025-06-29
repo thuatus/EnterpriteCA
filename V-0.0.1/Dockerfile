@@ -27,10 +27,11 @@ RUN mkdir /srv/CA /srv/ssl /srv/app
 #Generates app certificate and key to guarantee ssl encryption
 RUN openssl req -x509 -newkey rsa:4096 -keyout /srv/ssl/app.key -out /srv/ssl/app.crt -days 365 -nodes -subj "/CN=enterprise.app.com"
 
+
 # install trusted CA certificate
 RUN apk add --no-cache ca-certificates && \
     update-ca-certificates
-    
+
 
 # Copy the application files to the container folder
 #COPY images/CA/scriptCreateStructure.sql /srv/app/scriptCreateStructure.sql

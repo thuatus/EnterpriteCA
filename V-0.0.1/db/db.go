@@ -36,6 +36,10 @@ func ConnectDB() (*sql.DB, error) {
 	cfg := mysql.NewConfig()
 	cfg.User = "root"
 	cfg.Passwd = os.Getenv("MYSQL_ROOT_PASSWORD")
+	if cfg.Passwd == "" {
+		return nil, fmt.Errorf("MYSQL_ROOT_PASSWORD environment variable is not set:%s", cfg.Passwd)
+	}
+
 	cfg.Net = "tcp"
 	cfg.Addr = "127.0.0.1:3306"
 	cfg.DBName = "ca"
@@ -50,6 +54,27 @@ func ConnectDB() (*sql.DB, error) {
 
 	return db, nil
 
+}
+
+// Add user to the database
+func AddUser(username, password string) error {
+	log.Println("Conecting to the database...")
+	dbConn, err := ConnectDB()
+
+	if err != nil {
+		log.Println("Error connecting to the database:", err)
+		return err
+	}
+	defer dbConn.Close()
+
+	//  create the admin user
+	_, err = dbConn.Exec("INSERT INTO ca.users (name, passwd, active ) VALUES (?, ?, ?)", username, password, 1)
+	if err != nil {
+		log.Println("Error inserting admin user into the database:", err)
+		return err
+	}
+
+	return nil
 }
 
 // Add certificate information to the database
