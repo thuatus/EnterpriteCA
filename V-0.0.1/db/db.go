@@ -34,10 +34,10 @@ type DBCertInfo struct {
 func ConnectDB() (*sql.DB, error) {
 
 	cfg := mysql.NewConfig()
-	cfg.User = "root"
-	cfg.Passwd = os.Getenv("MYSQL_ROOT_PASSWORD")
+	cfg.User = os.Getenv("MYSQL_USER")
+	cfg.Passwd = os.Getenv("MYSQL_PASSWORD")
 	if cfg.Passwd == "" {
-		return nil, fmt.Errorf("MYSQL_ROOT_PASSWORD environment variable is not set:%s", cfg.Passwd)
+		return nil, fmt.Errorf("MYSQL_PASSWORD environment variable is not set:%s", cfg.Passwd)
 	}
 
 	cfg.Net = "tcp"
