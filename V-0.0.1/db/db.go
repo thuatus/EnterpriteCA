@@ -41,7 +41,7 @@ func ConnectDB() (*sql.DB, error) {
 	}
 
 	cfg.Net = "tcp"
-	cfg.Addr = "127.0.0.1:3306"
+	cfg.Addr = "localhost:3306"
 	cfg.DBName = "ca"
 
 	//Cria o tratamento de erro de conexão do DB

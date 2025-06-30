@@ -20,7 +20,7 @@ RUN mkdir -p /run/mysqld /var/lib/mysql && \
     chown -R mysql:mysql /run/mysqld /var/lib/mysql
 
 
-RUN mkdir /srv/CA /srv/ssl /srv/app
+RUN mkdir /srv/ssl /srv/app /srv/ca /srv/db
 
 
 
@@ -65,9 +65,9 @@ WORKDIR /srv/app
 COPY --from=builder /app/enterpriteca .
 
 COPY app .
-COPY ca  /srv
-COPY db  /srv
+COPY ca  /srv/ca
+COPY db  /srv/db
 
 EXPOSE 8443
-CMD ["./enterpriteca"]
+
 

@@ -44,4 +44,5 @@ mysqld --user=mysql --datadir=/var/lib/mysql
 
 # Start Go application
 
+echo "Running go application...  " 
 exec /srv/app/enterpriteca
