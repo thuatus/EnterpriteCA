@@ -236,6 +236,20 @@ func handleAdminUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Handle Login request
+func LoginHandler(w http.ResponseWriter, r *http.Request) {
+	// Serve the login form
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		log.Println("Method not allowed for login")
+		return
+	}
+
+	// Serve the login page
+	http.ServeFile(w, r, "./static/login.html")
+	log.Println("Serving login page")
+}
+
 // Authenticate user credentials
 func authenticateUser(w http.ResponseWriter, r *http.Request) {
 	// Handle the login request
@@ -349,7 +363,6 @@ func checkInitialSettingsMiddleware() Middleware {
 				log.Println("Redirecting to first login page")
 				fmt.Println("Redirecting to first login page")
 
-				http.ServeFile(w, r, "./static/first_login.html")
 				return
 			}
 
@@ -719,8 +732,8 @@ func main() {
 			http.ServeFile(w, r, "index.html")
 		},
 		Logging(),
-		checkInitialSettingsMiddleware(),
 		checkSession(),
+		checkInitialSettingsMiddleware(),
 	))
 
 	// file Server to serve static files
@@ -738,12 +751,16 @@ func main() {
 	mux.Handle("/add_user/", Logging()(handleAdminUser))
 
 	// REgister the form for login
-	mux.Handle("/login/", Logging()(func(w http.ResponseWriter, r *http.Request) {
+	/*
+		mux.Handle("/login/", Logging()(func(w http.ResponseWriter, r *http.Request) {
 
-		// Serve the login form
-		http.ServeFile(w, r, "./static/login.html")
+			// Serve the login form
+			http.ServeFile(w, r, "./static/login.html")
 
-	}))
+		}))
+	*/
+
+	mux.Handle("/login/", (ChainMiddleware(LoginHandler, Logging(), checkInitialSettingsMiddleware())))
 
 	// Register the login handler
 	mux.Handle("/authUser/", Logging()(authenticateUser))
