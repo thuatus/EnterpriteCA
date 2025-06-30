@@ -21,7 +21,7 @@ if [ ! -d "/var/lib/mysql/mysql" ]; then
 EOSQL
 fi
 
-echo "🔧 Starting MariaDB server in backgound..."
+echo "🔧 Starting MariaDB server in background..."
 mysqld --user=mysql --datadir=/var/lib/mysql --skip-networking &
 pid="$!"
 
