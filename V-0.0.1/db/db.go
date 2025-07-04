@@ -34,14 +34,14 @@ type DBCertInfo struct {
 func ConnectDB() (*sql.DB, error) {
 
 	cfg := mysql.NewConfig()
-	cfg.User = os.Getenv("MYSQL_USER")
-	cfg.Passwd = os.Getenv("MYSQL_PASSWORD")
+	cfg.User = "root"
+	cfg.Passwd = os.Getenv("MYSQL_ROOT_PASSWORD")
 	if cfg.Passwd == "" {
 		return nil, fmt.Errorf("MYSQL_PASSWORD environment variable is not set:%s", cfg.Passwd)
 	}
 
 	cfg.Net = "tcp"
-	cfg.Addr = "localhost:3306"
+	cfg.Addr = "db:3306" //"localhost:3306"
 	cfg.DBName = "ca"
 
 	//Cria o tratamento de erro de conexão do DB

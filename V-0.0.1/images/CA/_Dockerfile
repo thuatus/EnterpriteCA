@@ -15,11 +15,10 @@ WORKDIR /srv/app
 COPY --from=builder /app/enterpriteca .
 
 # Copy static, templates, and other needed folders
-COPY app/static ./static
-COPY app/templates ./templates
-COPY app/index.html ./index.html
-COPY ca /srv/ca
-COPY db /srv/db
+COPY V-0.0.1/static ./static
+COPY V-0.0.1/templates ./templates
+COPY V-0.0.1/ca /srv/ca
+COPY V-0.0.1/db /srv/db
 
 # (Optional) Generate SSL certs if needed
 RUN mkdir -p /srv/ssl && \
