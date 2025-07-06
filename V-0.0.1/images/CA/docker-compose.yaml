@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.4
+    container_name: enterpriteca-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql:z
+      - ./docker-entrypoint-db:/docker-entrypoint-initdb.d/:z
+    ports:
+      - "3306:3306"
+
+  app:
+    build:
+      context: ../../
+      dockerfile: Dockerfile
+    container_name: enterpriteca-app
+    depends_on:
+      - db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "8443:8443"
+# volume to persist data in /srv inside container
+
+
+
+volumes:
+  db_data:

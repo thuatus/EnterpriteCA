@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Certificate Information</title>
+    <!--include css file styles.css-->
+    
+    <link rel="stylesheet" href="/static/css/styles.css">
+
+    <!--
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .search-box {
+            margin-bottom: 15px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        tr.hide {
+            display: none;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px #444;
+            z-index: 1000;
+            width: 20%;
+            height: 25%;
+            overflow-y: auto;
+
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .btn {
+            padding: 8px 12px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 4px;
+            background: #0078D7;
+            color: white;
+            cursor: pointer;
+        }
+
+        .btn-red {
+            padding: 8px 12px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 4px;
+            background: #d70000;
+            color: white;
+            cursor: pointer;
+        }
+    </style>
+-->
+</head>
+<header>
+    <h1>EnterpriteCA</h1>
+</header>
+
+<body>
+    <h2>Certificate Information</h2>
+    <div class="search-box">
+        <label for="searchInput">Search:</label>
+        <input type="text" id="searchInput" placeholder="Type to search...">
+    </div>
+    <table id="certTable">
+        <thead>
+            <tr>
+                <!--   <th>Application</th> -->
+                <th>Subject</th>
+                <th>Issued Date</th>
+                <th>Expiry Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            {{range .}}
+            <tr>
+
+                <td id="subject_cell">{{.Subject}}</td>
+                <td>{{.Created}}</td>
+                <td>{{.Expire}}</td>
+                <td>{{.Status}}</td>
+
+                <td>
+
+                    <!-- Open a windows with a cert information -->
+
+                    <button class="btn view-cert-btn" data-public-key="{{.PublicKey}}"> View Certificate </button>
+                    <div class="overlay" id="overlay" onclick="closeModal()"></div>
+                    <div class="modal" id="modal">
+                        <p><strong>Public Key:</strong></p>
+                        <pre id="publicKeyText"></pre>
+                        <button class="btn" onclick="copyCert()">Copy Certificate</button>
+                    </div>
+
+                    <!-- button -->
+
+                    <button class="btn btn-primary" onclick="viewKey(this)">View Key</button>
+                    <script>
+
+                    </script>
+
+                    <!-- Modal -->
+                    <div id="modalViewKey" class="modal">
+                        <div class="modal-content">
+                            <span class="close">&times;</span>
+                            <p id="key_content"></p>
+                            <button class="btn" onclick="copyKey()">Copy Key</button>
+                        </div>
+                    </div>
+
+                    <button class="btn-red revoke-btn" data-subject="{{.Subject}}">Revoke Certificate</button>
+                </td>
+            </tr>
+            {{end}}
+
+
+            <!-- Add more rows as needed -->
+        </tbody>
+    </table>
+    <!-- include button to back to /-->
+    <div align="center" style="margin-top: 20px;">
+        <button class="btn" onclick="window.location.href='/'">Home</button>
+    </div>
+<!--
+    <script>
+        // This script is for the search functionality
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchInput = document.getElementById('searchInput');
+            searchInput.focus();
+        });
+
+        const searchInput = document.getElementById('searchInput');
+        const table = document.getElementById('certTable').getElementsByTagName('tbody')[0];
+
+        searchInput.addEventListener('keyup', function () {
+            const filter = searchInput.value.toLowerCase();
+            const rows = table.getElementsByTagName('tr');
+            for (let i = 0; i < rows.length; i++) {
+                const rowText = rows[i].textContent.toLowerCase();
+                rows[i].classList.toggle('hide', !rowText.includes(filter));
+            }
+        });
+
+
+        document.querySelectorAll('.view-cert-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                document.getElementById('publicKeyText').innerText = btn.getAttribute('data-public-key');
+                document.getElementById('modal').style.display = 'block';
+                document.getElementById('overlay').style.display = 'block';
+            });
+        });
+
+        function showModal() {
+            document.getElementById('modal').style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+        }
+
+        function copyCert() {
+            const text = document.getElementById('publicKeyText').innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Content copied to clipboard!');
+            });
+        }
+        function viewKey(btn) {
+
+            // Get the subject from the same row as the clicked button
+            const subject = btn.closest('tr').querySelector('#subject_cell').innerText;
+
+            fetch('/view_server_key/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ subject })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('key_content').innerText = data.Server_key || 'No key found';
+                    document.getElementById('modalViewKey').style.display = 'block';
+                })
+                .catch(error => {
+                    document.getElementById('key_content').innerText = 'Error fetching key';
+                    document.getElementById('modalViewKey').style.display = 'block';
+                });
+        }
+
+        // Close modal when clicking the close button
+        document.addEventListener('DOMContentLoaded', function () {
+            const closeBtn = document.querySelector('#modalViewKey .close');
+            if (closeBtn) {
+                closeBtn.onclick = function () {
+                    document.getElementById('modalViewKey').style.display = 'none';
+                };
+            }
+        });
+
+        // Copy key content to clipboard
+        function copyKey() {
+            const text = document.getElementById('key_content').innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Content copied to clipboard!');
+            });
+        }
+
+        // Send Request to revoke certificate
+        document.querySelectorAll('.revoke-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                // include a confirmation dialog
+
+                const subject = btn.getAttribute('data-subject');
+
+                if (!confirm(`Are you sure you want to revoke this certificate: ${subject}?`)) {
+                    return; // If the user cancels, do nothing
+                }
+                fetch('/revoke_cert/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ subject })
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            alert('Success on revoke certificate');
+                        } else {
+                            alert('Failed to revoke certificate');
+                        }
+                    })
+                    .catch(() => alert('Error communicating with server'));
+            });
+        });
+
+
+
+        //Refatoring
+        /*
+        // function to view in key content and
+         document.getElementById("btn_view_key").addEventListener("click", function(event) {
+         
+           event.preventDefault(); // Evita que o formulário seja enviado
+           let subject = this.parentElement.parentElement.querySelector("#subject_cell").innerText; // get value from the cell
+       
+           fetch("/view_server_key/", {
+               method: "POST",
+               headers: { "Content-Type": "application/json" },
+               body: JSON.stringify({ subject })
+           })
+           .then(response => response.json())
+           .then(data => {
+               document.getElementById("key_content").innerText = data.Server_key;
+               document.getElementById("modalViewKey").style.display = "block";
+           })
+           .catch(error => console.error("Erro na requisição:", error));
+       });
+         
+       
+       // Fechar modal
+       document.querySelector(".close").addEventListener("click", function() {
+           document.getElementById("modalViewKey").style.display = "none";
+       });
+       */
+
+
+    </script>
+-->
+<script src="/static/script/script_view_ca.js"></script>
+</body>
+
+<footer>
+    <p>&copy; 2025 EnterpriteCA  - V.0.0.1</p>
+</footer>
+
+</html>
