@@ -368,6 +368,26 @@ func CreateCACertificate(caPathName string) (string, error) {
 		return "", err
 	}
 
+	// concatenate the CA and Intermediate CA information
+
+	caChainFile := "/srv/app/static/ca-chain.pem"
+	input1, err := os.ReadFile(intermediateCACertificate)
+
+	if err != nil {
+		log.Fatalf("Error reading intermediate CA certificate: %v", err)
+		return "", err
+	}
+	input2, err := os.ReadFile(caCertificate)
+	if err != nil {
+		log.Fatalf("Error reading CA certificate: %v", err)
+		return "", err
+	}
+	err = os.WriteFile(caChainFile, append(input1, input2...), 0644)
+	if err != nil {
+		log.Fatalf("Error writing CA chain file: %v", err)
+		return "", err
+	}
+
 	return string(caKeyinfo) + "|" + string(caCertinfo), nil
 }
 
