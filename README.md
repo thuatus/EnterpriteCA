@@ -8,6 +8,8 @@ The purpose of this project is to learn Go and apply that knowledge in a real-wo
 
 **v0.0.1** – Initial version with the basic implementation of a Certificate Authority, a database, and a web application for development and learning purposes.
 
+**v0.0.2 - *
+
 ## Features
 
 - Generate and maintain Certificate Authorities (CAs)

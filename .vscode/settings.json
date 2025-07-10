@@ -13,5 +13,9 @@
             "database": "mysql",
             "username": "root"
         }
-    ]
+    ],
+    "sonarlint.connectedMode.project": {
+        "connectionId": "",
+        "projectKey": ""
+    }
 }
