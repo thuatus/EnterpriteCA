@@ -6,7 +6,7 @@ WORKDIR /build/V-0.0.1/app
 RUN go build -o /app/enterpriteca
 
 # Final image
-FROM alpine:latest
+FROM alpine:3.22
 
 RUN apk add --no-cache ca-certificates openssl
 WORKDIR /srv/app
