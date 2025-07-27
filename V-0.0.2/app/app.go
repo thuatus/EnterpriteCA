@@ -39,10 +39,15 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Structs
 type Middleware func(http.HandlerFunc) http.HandlerFunc
 
 type ServerKey struct {
 	ServerKey string `json:"Server_key"`
+}
+
+type CheckSetup struct {
+	InitialSettings bool `json:"initial_settings"`
 }
 
 var (
@@ -74,20 +79,22 @@ func Logging() Middleware {
 }
 
 // Check if the initial configuration was made before
-func checkInitialSettings() (bool, error) {
+func checkInitialSettings() bool {
 	// Check if the initial settings are set
 	// If not, return false and an error
 	// If yes, return true and nil
 	_, err := os.Stat("/srv/CA/")
 	if os.IsNotExist(err) {
-		return false, err
+		log.Println("CA folder does not exist, initial settings not applied")
+		return false
 	}
 	if err != nil {
-		return false, err
+		log.Println("Error checking CA folder:", err)
+		return false
 	}
 	// set tlsEnabled to true if the CA folders exist
 
-	return true, nil
+	return true
 }
 
 // Handle initiation CA process, based on user input
@@ -354,15 +361,11 @@ func checkInitialSettingsMiddleware() Middleware {
 		return func(w http.ResponseWriter, r *http.Request) {
 			// Check if the initial settings have been applied
 			//check if the initial settings were made
-			_, err := checkInitialSettings()
-			if err != nil {
-				log.Println("Initial settings not found, redirecting to form:", err)
-				fmt.Println("Initial settings not found, redirecting to form:", err)
+			checkInitSet := checkInitialSettings()
+			if !checkInitSet {
 				FormInitialSettings(w, r)
-
 				log.Println("Redirecting to first login page")
 				fmt.Println("Redirecting to first login page")
-
 				return
 			}
 
@@ -722,6 +725,7 @@ func HandleRevokeCertificate(w http.ResponseWriter, r *http.Request) {
 }
 
 // main function to start the web server
+// v0.0.2 Use gin framework to handle the web server
 func main() {
 	// Create a new http.ServeMux
 	mux := http.NewServeMux()
