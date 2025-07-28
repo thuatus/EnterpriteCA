@@ -33,6 +33,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/gorilla/sessions"
 	"github.com/thuatus/EnterpriteCA/V-0.0.2/ca"
 	"github.com/thuatus/EnterpriteCA/V-0.0.2/db"
@@ -83,18 +84,20 @@ func checkInitialSettings() bool {
 	// Check if the initial settings are set
 	// If not, return false and an error
 	// If yes, return true and nil
+	var folderConfig CheckSetup
+	folderConfig.InitialSettings = true
 	_, err := os.Stat("/srv/CA/")
 	if os.IsNotExist(err) {
 		log.Println("CA folder does not exist, initial settings not applied")
-		return false
+		folderConfig.InitialSettings = false
 	}
 	if err != nil {
 		log.Println("Error checking CA folder:", err)
-		return false
+		folderConfig.InitialSettings = false
 	}
 	// set tlsEnabled to true if the CA folders exist
 
-	return true
+	return folderConfig.InitialSettings
 }
 
 // Handle initiation CA process, based on user input
@@ -137,14 +140,10 @@ func FormInitialSettings(w http.ResponseWriter, _ *http.Request) {
 }
 
 // Handle the initial setting of PKI configuration
-func ApplyInitialSettings(w http.ResponseWriter, r *http.Request) {
+func ApplyInitialSettings(w http.ResponseWriter, r *http.Request) error {
 	// Apply the initial settings
 	// If not, return an error
 	// If yes, return nil
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
-	}
 
 	// Here you would process the form data and apply the initial settings
 	// For now, we will just log the form data
@@ -165,7 +164,7 @@ func ApplyInitialSettings(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("Error creating PKI folders:", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+		return err
 	}
 	log.Printf("Folders created: CA Path=%s, Intermediate CA Path=%s", caPathName, intermediateCaPathName)
 
@@ -174,7 +173,7 @@ func ApplyInitialSettings(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("Error creating config files:", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+		return err
 	}
 	log.Println("Config files created successfully")
 
@@ -183,15 +182,17 @@ func ApplyInitialSettings(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("Error creating CA certificate:", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+		return err
 	}
 
 	fmt.Println("Initial settings applied successfully")
 
+	return nil
+
 	// Redirect to the main page or show a success message
 	//http.Redirect(w, r, "/", http.StatusSeeOther)
-	fmt.Println("Redirecting to first login page")
-	http.Redirect(w, r, "/static/first_login.html", http.StatusSeeOther)
+	//	fmt.Println("Redirecting to first login page")
+	//	http.Redirect(w, r, "/static/first_login.html", http.StatusSeeOther)
 
 }
 
@@ -727,6 +728,58 @@ func HandleRevokeCertificate(w http.ResponseWriter, r *http.Request) {
 // main function to start the web server
 // v0.0.2 Use gin framework to handle the web server
 func main() {
+
+	// call gin framework to handle the web server
+	// gin.SetMode(gin.ReleaseMode)
+	r := gin.Default()
+	// Set up the routes
+	// check if the initial settings were made and handle the first login or main page
+	r.GET("/", func(c *gin.Context) {
+		// Serve the main page
+		if !checkInitialSettings() {
+
+			FormInitialSettings(c.Writer, c.Request)
+
+		} else {
+			// Serve the main page
+			c.File("index.html")
+			log.Println("Serving main page")
+		}
+
+	})
+
+	// Serve static content
+	r.GET("/static/*filepath", func(c *gin.Context) {
+		// Serve static files
+		filepath := c.Param("filepath")
+		if strings.HasPrefix(filepath, "/") {
+			filepath = filepath[1:] // Remove leading slash if present
+		}
+		c.File("./static/" + filepath)
+		log.Println("Serving static content:", filepath)
+	})
+
+	// Handle the initial settings form submission
+	r.POST("/save_init_cfg/", func(c *gin.Context) {
+		// Apply the initial settings
+		err := ApplyInitialSettings(c.Writer, c.Request)
+		if err != nil {
+			log.Println("Error applying initial settings:", err)
+			//return json error response
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+			return
+		}
+
+		log.Println("Initial settings applied successfully, redirecting to first login page")
+		c.Redirect(http.StatusSeeOther, "/static/first_login.html")
+
+	})
+
+	r.Run(":8080")
+
+}
+
+/*
 	// Create a new http.ServeMux
 	mux := http.NewServeMux()
 	// Register the logging middleware
@@ -755,15 +808,15 @@ func main() {
 	mux.Handle("/add_user/", Logging()(handleAdminUser))
 
 	// REgister the form for login
-	/*
+	//*
 		mux.Handle("/login/", Logging()(func(w http.ResponseWriter, r *http.Request) {
 
 			// Serve the login form
 			http.ServeFile(w, r, "./static/login.html")
 
 		}))
-	*/
 
+	//*
 	mux.Handle("/login/", (ChainMiddleware(LoginHandler, Logging(), checkInitialSettingsMiddleware())))
 
 	// Register the login handler
@@ -784,12 +837,12 @@ func main() {
 	mux.Handle("/revoke_cert/", (ChainMiddleware(HandleRevokeCertificate, Logging(), checkSession())))
 
 	// Start the server
-	/*err := http.ListenAndServe(":8080", mux)
+	//*err := http.ListenAndServe(":8080", mux)
 	// Log the error if any
 	if err != nil {
 		log.Fatal("Failed to start HTTP Server: %v", err)
 	}
-	*/
+	//*
 
 	err := http.ListenAndServeTLS(":8443", appCertPath, appKeyPath, mux)
 	if err != nil {
@@ -799,3 +852,4 @@ func main() {
 	log.Println("Server started on 8443 with TLS enabled")
 	log.Println("Visit  https://localhost:8443 to access")
 }
+*/
