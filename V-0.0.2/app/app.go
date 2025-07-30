@@ -52,8 +52,10 @@ type CheckSetup struct {
 }
 
 var (
-	key   = []byte("super-secret-key")
-	store = sessions.NewCookieStore(key)
+	key        = []byte("super-secret-key")
+	store      = sessions.NewCookieStore(key)
+	rootCAPath = "/home/alvaro/srv/CA"
+	//rootCAPath = "/srv/CA"
 )
 
 var appCertPath = "/srv/ssl/app.crt"
@@ -86,7 +88,7 @@ func checkInitialSettings() bool {
 	// If yes, return true and nil
 	var folderConfig CheckSetup
 	folderConfig.InitialSettings = true
-	_, err := os.Stat("/srv/CA/")
+	_, err := os.Stat(rootCAPath)
 	if os.IsNotExist(err) {
 		log.Println("CA folder does not exist, initial settings not applied")
 		folderConfig.InitialSettings = false
@@ -160,7 +162,7 @@ func ApplyInitialSettings(w http.ResponseWriter, r *http.Request) error {
 
 	// Create the CA folders
 	// This is where you would create the necessary directories for the CA
-	caPathName, intermediateCaPathName, err := ca.CreatePKIFolders(CaFolderName)
+	caPathName, intermediateCaPathName, err := ca.CreatePKIFolders(rootCAPath, CaFolderName)
 	if err != nil {
 		log.Println("Error creating PKI folders:", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)

@@ -34,11 +34,14 @@ type CertInfo struct {
 }
 
 // Creates folders and files structure
-func CreatePKIFolders(caName string) (string, string, error) {
+func CreatePKIFolders(rootCAPath, caName string) (string, string, error) {
 
-	rootPath := "/srv/CA/"
+	//for tests
+	//rootPath := "/home/alvaro/srv/CA/"
+	//rootPath := "/srv/CA/"
+
 	intermediateCaName := "intermediateCA"
-	caPath := rootPath + caName
+	caPath := rootCAPath + caName
 	intermediateCAPath := caPath + "/" + intermediateCaName
 	certsFolderPath := intermediateCAPath + "/certs"
 	csrFOlderPath := intermediateCAPath + "/csr"
@@ -369,8 +372,13 @@ func CreateCACertificate(caPathName string) (string, error) {
 	}
 
 	// concatenate the CA and Intermediate CA information
+	var appPathName string
+	indexappPatch := strings.Index(caPathName, "/srv")
+	if indexappPatch != -1 {
+		appPathName = caPathName[:indexappPatch+len("/srv")]
+	}
 
-	caChainFile := "/srv/app/static/ca-chain.pem"
+	caChainFile := appPathName + "/app/static/ca-chain.pem"
 	input1, err := os.ReadFile(intermediateCACertificate)
 
 	if err != nil {
