@@ -199,51 +199,45 @@ func ApplyInitialSettings(w http.ResponseWriter, r *http.Request) error {
 }
 
 // Handle the user input for create a admin account
-func handleAdminUser(w http.ResponseWriter, r *http.Request) {
+func handleAdminUser(w http.ResponseWriter, r *http.Request) error {
 	// Handle the admin user creatio
-	if r.Method != http.MethodPost {
-		// Serve the form (first_login.html)
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		log.Println("Method not allowed for admin user creation")
-		return
-	} else {
-
-		// Get the form values
-		username := r.FormValue("user")
-		password := r.FormValue("password")
-		confirmPassword := r.FormValue("confirmPassword")
-		// Validate the form values
-		if username == "" || password == "" || confirmPassword == "" {
-			http.Error(w, "All fields are required", http.StatusBadRequest)
-			log.Println("All fields are required for admin user creation")
-			return
-		}
-
-		if password != confirmPassword {
-			http.Error(w, "Passwords do not match", http.StatusBadRequest)
-			log.Println("Passwords do not match for admin user creation")
-			return
-		}
-
-		hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-		if err != nil {
-			log.Println("Error hashing password:", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-
-		// Create the admin user
-		err = db.AddUser(username, string(hash))
-		if err != nil {
-			log.Println("Error creating admin user:", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
-
-		log.Println("Admin user created successfully")
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+	// Get the form values
+	username := r.FormValue("user")
+	password := r.FormValue("password")
+	confirmPassword := r.FormValue("confirmPassword")
+	// Validate the form values
+	if username == "" || password == "" || confirmPassword == "" {
+		http.Error(w, "All fields are required", http.StatusBadRequest)
+		log.Println("All fields are required for admin user creation")
 
 	}
+
+	if password != confirmPassword {
+		http.Error(w, "Passwords do not match", http.StatusBadRequest)
+		log.Println("Passwords do not match for admin user creation")
+
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		log.Println("Error hashing password:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return err
+	}
+
+	// Create the admin user
+	err = db.AddUser(username, string(hash))
+	if err != nil {
+		log.Println("Error creating admin user:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return err
+
+	}
+
+	log.Println("Admin user created successfully")
+	//http.Redirect(w, r, "/", http.StatusSeeOther)
+
+	return nil
 }
 
 // Handle Login request
@@ -774,6 +768,21 @@ func main() {
 
 		log.Println("Initial settings applied successfully, redirecting to first login page")
 		c.Redirect(http.StatusSeeOther, "/static/first_login.html")
+
+	})
+
+	// Handle the admin user creation form submisison
+	r.POST("/add_user/", func(c *gin.Context) {
+		err := handleAdminUser(c.Writer, c.Request)
+		if err != nil {
+			log.Println("Error handling admin user creation:", err)
+			//return json error response
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+			return
+		}
+		// Redirect to the main page
+		log.Println("Admin user created successfully, redirecting to main page")
+		c.Redirect(http.StatusSeeOther, "/")
 
 	})
 

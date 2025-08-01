@@ -36,12 +36,8 @@ type CertInfo struct {
 // Creates folders and files structure
 func CreatePKIFolders(rootCAPath, caName string) (string, string, error) {
 
-	//for tests
-	//rootPath := "/home/alvaro/srv/CA/"
-	//rootPath := "/srv/CA/"
-
 	intermediateCaName := "intermediateCA"
-	caPath := rootCAPath + caName
+	caPath := rootCAPath + "/" + caName
 	intermediateCAPath := caPath + "/" + intermediateCaName
 	certsFolderPath := intermediateCAPath + "/certs"
 	csrFOlderPath := intermediateCAPath + "/csr"
@@ -237,7 +233,7 @@ func CreateConfigFiles(caPath string, country string, state string, local string
 		return "", err
 	}
 
-	defFilePath := "/srv/CA/definitions.txt"
+	defFilePath := "../definitions.txt"
 	defFile, err := os.Create(defFilePath)
 	if err != nil {
 		log.Fatalf("Error creating definition file: %v", err)
