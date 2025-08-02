@@ -12,6 +12,7 @@ replace github.com/thuatus/EnterpriteCA/tree/main/V-0.0.2/app => .
 
 require (
 	github.com/gin-gonic/gin v1.10.1
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/gorilla/sessions v1.4.0
 	github.com/stretchr/testify v1.10.0
 	github.com/thuatus/EnterpriteCA/V-0.0.2/ca v0.0.0-00010101000000-000000000000

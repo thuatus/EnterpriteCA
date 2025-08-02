@@ -34,6 +34,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 	"github.com/gorilla/sessions"
 	"github.com/thuatus/EnterpriteCA/V-0.0.2/ca"
 	"github.com/thuatus/EnterpriteCA/V-0.0.2/db"
@@ -373,51 +374,40 @@ func checkInitialSettingsMiddleware() Middleware {
 }
 
 // CheckSession checks if the user is authenticated and the session is valid
-func checkSession() Middleware {
-	return func(f http.HandlerFunc) http.HandlerFunc {
-
-		return func(w http.ResponseWriter, r *http.Request) {
-
-			// Check if the session exists
-			session, err := store.Get(r, "session-token")
-			if err != nil {
-				log.Println("Error getting session:", err)
-				http.Redirect(w, r, "/login", http.StatusSeeOther)
-				return
-			}
-
-			_, ok := session.Values["UUID"]
-			if !ok {
-
-				log.Println("Session not found or user not authenticated")
-				http.Redirect(w, r, "/login", http.StatusSeeOther)
-				return
-			}
-
-			//check if token is expired based on max age
-			loginTimeStr, ok := session.Values["LoginTime"].(string)
-			if !ok {
-				log.Println("Login time not found in session")
-				http.Redirect(w, r, "/login", http.StatusSeeOther)
-
-				return
-			}
-			loginTime, err := time.Parse(time.RFC3339, loginTimeStr)
-			if err != nil {
-				log.Println("Error parsing login time:", err)
-				http.Redirect(w, r, "/login", http.StatusSeeOther)
-				return
-			}
-			maxAge := 60 * time.Minute // Set the maximum age for the session
-			if time.Since(loginTime) > maxAge {
-				log.Println("Session expired, redirecting to login")
-				http.Redirect(w, r, "/login", http.StatusSeeOther)
-				return
-			}
-
-			// Call the next middleware/handler in chain
-			f(w, r)
+func checkSessionMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Check if the jwt token exists in the request header
+		tokenString := c.GetHeader("Authorization")
+		if tokenString == "" {
+			log.Println("No Authorization header found, redirecting to login")
+			c.Redirect(http.StatusSeeOther, "/login")
+			return
 		}
+		// Check if the session exists
+		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+			// Verify the signing method
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				log.Println("Unexpected signing method:", token.Header["alg"])
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			}
+			// set the JWT scretin a environment variable before running the application
+			return []byte(os.Getenv("JWT_SECRET")), nil // Return the secret key used for signing
+		})
+
+		if err != nil || !token.Valid {
+			log.Println("Error parsing JWT token:", err)
+			c.Redirect(http.StatusSeeOther, "/login")
+			return
+		}
+
+		claims := token.Claims.(jwt.MapClaims)
+		c.Set("UUID", claims["UUID"])                   // Set the UUID in the context
+		c.Set("Authenticated", claims["Authenticated"]) // Set the authentication status in the context
+		c.Set("LoginTime", claims["LoginTime"])         // Set the login time in the
+		c.Set("UserAgent", claims["UserAgent"])         // Set the user agent in the context
+		log.Println("Session is valid, user authenticated")
+
+		c.Next() // Call the next handler in chain
 	}
 }
 
@@ -728,6 +718,23 @@ func main() {
 	// call gin framework to handle the web server
 	// gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
+
+	// log customization
+	r.Use(gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
+		// Custom log format
+		return fmt.Sprintf("%s - %s %s %d %s %s %s %s %s\n",
+			param.TimeStamp.Format(time.RFC3339),
+			param.ClientIP,
+			param.Method,
+			param.StatusCode,
+			param.Path,
+			param.Request.UserAgent(),
+			param.Request.Proto,
+			param.Latency,
+			param.ErrorMessage,
+		)
+	}))
+
 	// Set up the routes
 	// check if the initial settings were made and handle the first login or main page
 	r.GET("/", func(c *gin.Context) {
@@ -738,8 +745,9 @@ func main() {
 
 		} else {
 			// Serve the main page
+			r.Use(checkSessionMiddleware())
 			c.File("index.html")
-			log.Println("Serving main page")
+			fmt.Println("Serving main page")
 		}
 
 	})
@@ -753,6 +761,7 @@ func main() {
 		}
 		c.File("./static/" + filepath)
 		log.Println("Serving static content:", filepath)
+
 	})
 
 	// Handle the initial settings form submission
@@ -784,6 +793,15 @@ func main() {
 		log.Println("Admin user created successfully, redirecting to main page")
 		c.Redirect(http.StatusSeeOther, "/")
 
+	})
+
+	r.GET("/login/", func(c *gin.Context) {
+		// Serve the login form
+
+		// Serve the login page
+		c.File("./static/login.html")
+
+		log.Println("Serving login page")
 	})
 
 	r.Run(":8080")
