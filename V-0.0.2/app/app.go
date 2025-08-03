@@ -320,7 +320,36 @@ func authenticateUser(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("User %s authenticated successfully", username)
 
-	// Create a new session
+	// Create a new session based on JWT
+	bytes := make([]byte, 16)
+	_, err = rand.Read(bytes) // Fill the slice with cryptographically secure random bytes
+	if err != nil {
+		log.Println("Error generating random UUID:", err)
+		return
+	}
+
+	claims := jwt.MapClaims{
+		"UUID":          hex.EncodeToString(bytes), // Generate a UUID for the user session
+		"Authenticated": true,
+		"LoginTime":     time.Now().Format(time.RFC3339),
+		"UserAgent":     r.UserAgent(),
+	}
+
+	// Set the JWT secret in an environment variable before running the application
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+	if err != nil {
+		log.Println("Error signing JWT token:", err)
+
+		return
+	}
+	// Set the JWT token in the response header
+	w.Header().Set("Authorization", "Bearer "+tokenString)
+	log.Println("JWT token created and set in response header")
+
+}
+
+/*
 	session, err := store.New(r, "session-token")
 	if err != nil {
 		log.Println("Error getting session:", err)
@@ -351,7 +380,8 @@ func authenticateUser(w http.ResponseWriter, r *http.Request) {
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
-
+*/
+// Verif if the initial settings were made
 func checkInitialSettingsMiddleware() Middleware {
 	// Middleware to check if the initial settings have been applied
 	return func(f http.HandlerFunc) http.HandlerFunc {
@@ -380,8 +410,13 @@ func checkSessionMiddleware() gin.HandlerFunc {
 		tokenString := c.GetHeader("Authorization")
 		if tokenString == "" {
 			log.Println("No Authorization header found, redirecting to login")
-			c.Redirect(http.StatusSeeOther, "/login")
+			c.Redirect(http.StatusMovedPermanently, "/login")
+			c.Abort()
 			return
+		}
+		// Strip "Bearer " prefix if present
+		if strings.HasPrefix(tokenString, "Bearer ") {
+			tokenString = strings.TrimPrefix(tokenString, "Bearer ")
 		}
 		// Check if the session exists
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
@@ -396,7 +431,8 @@ func checkSessionMiddleware() gin.HandlerFunc {
 
 		if err != nil || !token.Valid {
 			log.Println("Error parsing JWT token:", err)
-			c.Redirect(http.StatusSeeOther, "/login")
+			c.Redirect(http.StatusSeeOther, "/login/")
+			c.Abort()
 			return
 		}
 
@@ -737,20 +773,17 @@ func main() {
 
 	// Set up the routes
 	// check if the initial settings were made and handle the first login or main page
-	r.GET("/", func(c *gin.Context) {
-		// Serve the main page
-		if !checkInitialSettings() {
-
-			FormInitialSettings(c.Writer, c.Request)
-
-		} else {
-			// Serve the main page
-			r.Use(checkSessionMiddleware())
+	// Register middleware for "/" route only if initial settings are present
+	if checkInitialSettings() {
+		r.GET("/", checkSessionMiddleware(), func(c *gin.Context) {
 			c.File("index.html")
 			fmt.Println("Serving main page")
-		}
-
-	})
+		})
+	} else {
+		r.GET("/", func(c *gin.Context) {
+			FormInitialSettings(c.Writer, c.Request)
+		})
+	}
 
 	// Serve static content
 	r.GET("/static/*filepath", func(c *gin.Context) {
@@ -802,6 +835,13 @@ func main() {
 		c.File("./static/login.html")
 
 		log.Println("Serving login page")
+	})
+
+	r.POST("/authUser/", func(c *gin.Context) {
+		// Authenticate the user
+		authenticateUser(c.Writer, c.Request)
+		log.Println("User authenticated successfully, redirecting to main page")
+		c.Redirect(http.StatusSeeOther, "/")
 	})
 
 	r.Run(":8080")
