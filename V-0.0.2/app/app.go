@@ -333,6 +333,8 @@ func authenticateUser(w http.ResponseWriter, r *http.Request) {
 		"Authenticated": true,
 		"LoginTime":     time.Now().Format(time.RFC3339),
 		"UserAgent":     r.UserAgent(),
+		"Secure":        false, // Set to true if using HTTPS
+		"HttpOnly":      true,
 	}
 
 	// Set the JWT secret in an environment variable before running the application
@@ -343,31 +345,19 @@ func authenticateUser(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-	// Set the JWT token in the response header
-	w.Header().Set("Authorization", "Bearer "+tokenString)
-	log.Println("JWT token created and set in response header")
-
-}
-
-/*
-	session, err := store.New(r, "session-token")
+	// Set the JWT in a session cookie
+	session, err := store.Get(r, "session-token")
 	if err != nil {
 		log.Println("Error getting session:", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
-	// Store the user ID in the session
-	bytes := make([]byte, 16)
-	_, err = rand.Read(bytes) // Fill the slice with cryptographically secure random bytes
-	if err != nil {
-		log.Println("Error generating random UUID:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-	session.Values["UUID"] = hex.EncodeToString(bytes)
+	session.Values["Auth_Token"] = tokenString // Store the JWT in the session
 	session.Values["Authenticated"] = true
 	session.Values["LoginTime"] = time.Now().Format(time.RFC3339)
 	session.Values["UserAgent"] = r.UserAgent()
+	session.Values["Secure"] = false // Set to true if using HTTPS
+	session.Values["HttpOnly"] = true
 
 	// Save the session
 	err = session.Save(r, w)
@@ -376,11 +366,13 @@ func authenticateUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
-	log.Printf("Session created for user %s", username)
+	log.Printf("Session created for user %s with UUID %s", username, claims["UUID"])
+	// Set the JWT in the response header
+	w.Header().Set("Authorization", "Bearer "+tokenString)
+	log.Println("JWT token created and stored in session for user:", username)
 
-	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
-*/
+
 // Verif if the initial settings were made
 func checkInitialSettingsMiddleware() Middleware {
 	// Middleware to check if the initial settings have been applied
@@ -406,10 +398,20 @@ func checkInitialSettingsMiddleware() Middleware {
 // CheckSession checks if the user is authenticated and the session is valid
 func checkSessionMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Check if the jwt token exists in the request header
-		tokenString := c.GetHeader("Authorization")
-		if tokenString == "" {
-			log.Println("No Authorization header found, redirecting to login")
+
+		//get session
+		session, err := store.Get(c.Request, "session-token")
+		if err != nil {
+			log.Println("Error getting session:", err)
+			c.Redirect(http.StatusSeeOther, "/login/")
+			c.Abort()
+			return
+		}
+
+		// Check if the jwt token exists in the session
+		tokenString, ok := session.Values["Auth_Token"].(string)
+		if !ok || tokenString == "" {
+			log.Println("No Authorization token found in session, redirecting to login")
 			c.Redirect(http.StatusMovedPermanently, "/login")
 			c.Abort()
 			return
