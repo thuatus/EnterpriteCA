@@ -33,6 +33,11 @@ type CertInfo struct {
 	Expire             string
 }
 
+var (
+	rootCAPath string = "/home/alvaro/srv/CA/"
+	//rootCAPath string = "/srv/CA"
+)
+
 // Creates folders and files structure
 func CreatePKIFolders(rootCAPath, caName string) (string, string, error) {
 
@@ -252,7 +257,8 @@ func CreateConfigFiles(caPath string, country string, state string, local string
 func getCAInfo() (string, string, error) {
 
 	// Lê o conteúdo do arquivo
-	caInfo, err := os.ReadFile("/srv/CA/definitions.txt")
+	defpath := rootCAPath + "definitions.txt"
+	caInfo, err := os.ReadFile(defpath)
 	if err != nil {
 		fmt.Printf("can't read file %v\n", err)
 		return "", "", err
@@ -268,7 +274,8 @@ func getCAInfo() (string, string, error) {
 // Return the informnation about the Intermediate CA
 func GetIntermediateCAInfo() (CertInfo, error) {
 	// Lê o conteúdo do arquivo
-	IntCAInfo, err := os.ReadFile("/srv/CA/definitions.txt")
+	defpath := rootCAPath + "definitions.txt"
+	IntCAInfo, err := os.ReadFile(defpath)
 	if err != nil {
 		fmt.Printf("can't read file %v\n", err)
 		return CertInfo{}, fmt.Errorf("can not read the intca file: %v", err)
@@ -421,7 +428,7 @@ func GenerateServerKey(serverName string) (string, error) {
 }
 
 // Generate a Certificate Signing Request (CSR) for a server certificate file
-func GenerateCSR(serverName string) (string, error) {
+func GenerateCSR(serverName string, rootCAPath string) (string, error) {
 
 	serverCertinfo, err := GetIntermediateCAInfo()
 	if err != nil {

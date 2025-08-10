@@ -29,7 +29,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"regexp"
 	"strings"
 	"time"
 
@@ -52,15 +51,35 @@ type CheckSetup struct {
 	InitialSettings bool `json:"initial_settings"`
 }
 
+type CertInputData struct {
+	ServerName string `form:"serverName" binding:"required,min=3,max=64,fqdn"`
+}
+
+type DBCertInfo struct {
+	Issuer    string
+	Subject   string
+	PublicKey string
+	Created   time.Time
+	Expire    time.Time
+	Status    int // 1 for valid, 0 for invalid
+}
+type Certificate struct {
+	Issuer    string `json:"issuer"`
+	Subject   string `json:"subject"`
+	PublicKey string `json:"public_key"`
+	Created   string `json:"created"`
+	Expire    string `json:"expire"`
+	Status    int    `json:"status"`
+}
+
 var (
 	key        = []byte("super-secret-key")
 	store      = sessions.NewCookieStore(key)
 	rootCAPath = "/home/alvaro/srv/CA"
 	//rootCAPath = "/srv/CA"
+	appCertPath = "/srv/ssl/app.crt"
+	appKeyPath  = "/srv/ssl/app.key"
 )
-
-var appCertPath = "/srv/ssl/app.crt"
-var appKeyPath = "/srv/ssl/app.key"
 
 // Logging logs all requests with its path and the time it took to process
 func Logging() Middleware {
@@ -458,77 +477,86 @@ func ChainMiddleware(f http.HandlerFunc, middlewares ...Middleware) http.Handler
 }
 
 // Handle the certificate issuance request form
-func IssueCertHandler(w http.ResponseWriter, r *http.Request) {
+func IssueCertHandler(w http.ResponseWriter, r *http.Request) error {
 
 	// RETURN TEMPLATE FOR THE FORM
 	template, err := template.ParseFiles("templates/frm_add_cert.html")
 	if err != nil {
 		log.Println("Error parsing template:", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+		return err
 	}
 
 	IntCAInfo, err := ca.GetIntermediateCAInfo()
 	if err != nil {
 		log.Println("Error getting intermediate CA info:", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+		return err
 	}
 
 	if err := template.Execute(w, IntCAInfo); err != nil {
 		log.Println("Error executing frm_add_cert template:", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+		return err
 	}
+
+	return nil
 
 }
 
 // Issue server certificate and save it to the database
-func CreateServerCert(w http.ResponseWriter, r *http.Request) {
+func CreateServerCert(c *gin.Context) error {
 	// Handle the server certificate creation request
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
-	}
 
 	// Get the form values
-	serverName := r.FormValue("serverName")
+	//bind servername from the form
+	var issueCertData CertInputData
 
-	// Validate the form values
-
-	if serverName == "" {
-		http.Error(w, "Server name is required", http.StatusBadRequest)
-		return
+	// Bind the form data to the issueCertData struct
+	err := c.ShouldBind(&issueCertData)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return err
 	}
 
-	if len(serverName) < 3 {
-		http.Error(w, "Server name must be at least 3 characters long", http.StatusBadRequest)
-		return
-	}
-	if len(serverName) > 64 {
-		http.Error(w, "Server name must be at most 64 characters long", http.StatusBadRequest)
-		return
-	}
-	// verify that server name contains domains .com .org .gov .jus
-	validDomain := regexp.MustCompile(`^([a-zA-Z0-9-]+\.)+(com|gov|jus|org)(\.[a-zA-Z]{2})?$`)
-	if !validDomain.MatchString(serverName) {
-		http.Error(w, "Server name must contain a domain", http.StatusBadRequest)
-		return
-	}
+	// get the server name from the request data
+	serverName := issueCertData.ServerName
+
+	/*
+		if serverName == "" {
+				http.Error(w, "Server name is required", http.StatusBadRequest)
+				return
+			}
+
+			if len(serverName) < 3 {
+				http.Error(w, "Server name must be at least 3 characters long", http.StatusBadRequest)
+				return
+			}
+			if len(serverName) > 64 {
+				http.Error(w, "Server name must be at most 64 characters long", http.StatusBadRequest)
+				return
+			}
+			// verify that server name contains domains .com .org .gov .jus
+			validDomain := regexp.MustCompile(`^([a-zA-Z0-9-]+\.)+(com|gov|jus|org)(\.[a-zA-Z]{2})?$`)
+			if !validDomain.MatchString(serverName) {
+				http.Error(w, "Server name must contain a domain", http.StatusBadRequest)
+				return
+			}
+	*/
 
 	//generate a csr file for the server certificate
-	csr, err := ca.GenerateCSR(serverName)
+	csr, err := ca.GenerateCSR(serverName, rootCAPath)
 	if err != nil {
 		log.Println("Error generating CSR:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+
+		return err
 	}
 
 	csrFile, err := os.Open(csr)
 	if err != nil {
 		log.Println("Error opening CSR file:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+
+		return err
 	}
 	defer csrFile.Close()
 	// Create the server certificate
@@ -536,8 +564,8 @@ func CreateServerCert(w http.ResponseWriter, r *http.Request) {
 	_, err = ca.IssueServerCertificate(serverName, csrFile)
 	if err != nil {
 		log.Println("Error creating server certificate:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+
+		return err
 	}
 	log.Println("Server certificate created successfully for:", serverName)
 
@@ -546,8 +574,8 @@ func CreateServerCert(w http.ResponseWriter, r *http.Request) {
 	cert, err := ca.GetServerCertificateInfo(serverName)
 	if err != nil {
 		log.Println("Error getting server certificate info:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+
+		return err
 	}
 	log.Println("Cert Objec:", cert.Subject)
 
@@ -555,8 +583,8 @@ func CreateServerCert(w http.ResponseWriter, r *http.Request) {
 	dbConn, err := db.ConnectDB()
 	if err != nil {
 		log.Println("Error connecting to the database:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+
+		return err
 	}
 	defer dbConn.Close()
 
@@ -564,16 +592,16 @@ func CreateServerCert(w http.ResponseWriter, r *http.Request) {
 	err = dbConn.Ping()
 	if err != nil {
 		log.Println("Error pinging the database:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+
+		return err
 	}
 
 	// Create a dbCertInfo struct to hold the certificate information
 	strPublicKey := hex.EncodeToString(cert.PublicKey)
 	if strPublicKey == "" {
 		log.Println("Error encoding public key to hex string")
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+
+		return err
 	}
 
 	expire := cert.Expire
@@ -583,8 +611,8 @@ func CreateServerCert(w http.ResponseWriter, r *http.Request) {
 	log.Println("Parsed Expire Time:", expireTime)
 	if err != nil {
 		log.Println("Error parsing expiration time:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+
+		return err
 	}
 
 	// use formatted as your string in the desired pattern
@@ -598,51 +626,61 @@ func CreateServerCert(w http.ResponseWriter, r *http.Request) {
 	err = db.AddCertificate(dbCertInfo)
 	if err != nil {
 		log.Println("Error saving certificate to database:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+
+		return err
 	}
 
 	log.Println("Server certificate created and saved successfully")
 	// ****>change to view the certificate page
 
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	// Redirect to the view certificate page
+
+	return nil
 
 }
 
 // Handle the view ca form, set up a template view
-func ViewCertificateForm(w http.ResponseWriter, r *http.Request) {
+func ViewCertificateForm(c *gin.Context) error {
 	// Serve the view certificate form
-	template, err := template.ParseFiles("templates/frm_view_ca.html")
+	/*
+		template, err := template.ParseFiles("templates/frm_view_ca.html")
 
-	if err != nil {
-		log.Println("Error parsing template:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-
+		if err != nil {
+			log.Println("Error parsing template:", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return err
+		}
+	*/
 	// get database info about servers certificates
 	dbConn, err := db.ConnectDB()
 	if err != nil {
 		log.Println("Error connecting to the database:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+
+		return err
 	}
 	defer dbConn.Close()
 	// Get the list of server certificates from the database
 	ServerCerts, err := db.GetServerCertificates()
 	if err != nil {
 		log.Println("Error getting server certificates from database:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+		return err
 	}
 
-	// Execute the template with any necessary data
-	if err := template.Execute(w, ServerCerts); err != nil {
-		log.Println("Error executing frm_view_cert template:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+	// Set JSON response content
+	var certs []Certificate
+	for _, cert := range ServerCerts {
+		certs = append(certs, Certificate{
+			Issuer:    cert.Issuer,
+			Subject:   cert.Subject,
+			PublicKey: cert.PublicKey,
+			Created:   cert.Created.Format("2006-01-02 15:04:05"),
+			Expire:    cert.Expire.Format("2006-01-02 15:04:05"),
+			Status:    cert.Status,
+		})
 	}
+	c.JSON(http.StatusOK, gin.H{"certificates": certs})
 
+	return nil
 }
 
 // Handle the view pserver private key request
@@ -844,6 +882,43 @@ func main() {
 		authenticateUser(c.Writer, c.Request)
 		log.Println("User authenticated successfully, redirecting to main page")
 		c.Redirect(http.StatusSeeOther, "/")
+	})
+
+	r.GET("/issue_cert/", func(c *gin.Context) {
+		// Handle the certificate issuance request
+
+		err := IssueCertHandler(c.Writer, c.Request)
+		if err != nil {
+			log.Println("Error handling certificate issuance request:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+			return
+		}
+		c.Redirect(http.StatusSeeOther, "/view_cert/")
+
+	})
+
+	r.POST("/add_server_cert/", func(c *gin.Context) {
+		// Handle the server certificate creation request
+		err := CreateServerCert(c)
+		if err != nil {
+			log.Println("Error creating server certificate:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+			return
+		}
+		log.Println("Server certificate created successfully, redirecting to main page")
+		c.Redirect(http.StatusSeeOther, "/view_cert/")
+	})
+
+	r.GET("/view_cert/", func(c *gin.Context) {
+		// Handle the view certificate request
+		err := ViewCertificateForm(c)
+		if err != nil {
+			log.Println("Error handling view certificate request:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+			return
+		}
+
+		log.Println("Serving view certificate form")
 	})
 
 	r.Run(":8080")
