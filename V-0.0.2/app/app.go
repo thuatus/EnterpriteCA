@@ -684,51 +684,47 @@ func ViewCertificateForm(c *gin.Context) error {
 }
 
 // Handle the view pserver private key request
-func ViewServerPrivateKey(w http.ResponseWriter, r *http.Request) {
+func ViewServerPrivateKey(w http.ResponseWriter, r *http.Request) (string, error) {
 	// Handle the request to view the server private key
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		log.Println("Method not allowed for viewing server private key")
-		return
-	}
 
 	// Extract the server name from the form
 
 	var requestData map[string]string
 	err := json.NewDecoder(r.Body).Decode(&requestData)
 	if err != nil {
-		http.Error(w, "Error on process request", http.StatusBadRequest)
+
 		log.Println("Error decoding request body:", err)
-		return
+		return "", err
 	}
 
 	// get the subject value from the request data
 	subject := requestData["subject"]
 	if subject == "" {
-		http.Error(w, "Subject cant be empty", http.StatusBadRequest)
+
 		log.Println("Subject is empty in the request data")
-		return
+		return "", err
 	}
 
 	serverName, err := ca.GetServerNameFromCert(subject)
 	if err != nil {
 		log.Println("Error getting server name from certificate:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+		return "", err
 	}
 
 	// Get the private key for the server certificate
 	privateKey, err := ca.GetServerPrivateKey(serverName)
 	if err != nil {
 		log.Println("Error getting server private key:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+		return "", err
 	}
 
-	// Serve the private key file
-	responseData := ServerKey{ServerKey: privateKey}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(responseData)
+	//Serve the private key file
+	/*
+		responseData := ServerKey{ServerKey: privateKey}
+		w.Header().Set("Content-Type", "application/json")
+		// json.NewEncoder(w).Encode(responseData)
+	*/
+	return privateKey, nil
 
 }
 
@@ -919,6 +915,21 @@ func main() {
 		}
 
 		log.Println("Serving view certificate form")
+	})
+
+	r.POST("/view_server_key/", func(c *gin.Context) {
+		// Handle the request to view the server private key
+		serverkey, err := ViewServerPrivateKey(c.Writer, c.Request)
+		if err != nil {
+			log.Println("Error viewing server private key:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+			return
+		}
+		log.Println("Server private key viewed successfully")
+		// return reposnse with server key in json format, using a struct
+		serverKeyObj := ServerKey{ServerKey: serverkey}
+		c.JSON(http.StatusOK, serverKeyObj)
+
 	})
 
 	r.Run(":8080")
