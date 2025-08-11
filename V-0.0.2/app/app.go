@@ -678,7 +678,9 @@ func ViewCertificateForm(c *gin.Context) error {
 			Status:    cert.Status,
 		})
 	}
-	c.JSON(http.StatusOK, gin.H{"certificates": certs})
+
+	// Return the certificates as a JSON response.
+	c.JSON(http.StatusOK, certs)
 
 	return nil
 }
@@ -905,7 +907,12 @@ func main() {
 		c.Redirect(http.StatusSeeOther, "/view_cert/")
 	})
 
-	r.GET("/view_cert/", func(c *gin.Context) {
+	r.GET("view_cert/", checkSessionMiddleware(), func(c *gin.Context) {
+		// Handle the view certificate request
+		c.File("templates/frm_view_ca.html")
+	})
+
+	r.GET("/view_cert_info/", func(c *gin.Context) {
 		// Handle the view certificate request
 		err := ViewCertificateForm(c)
 		if err != nil {

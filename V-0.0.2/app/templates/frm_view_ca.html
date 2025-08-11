@@ -5,8 +5,9 @@
     <meta charset="UTF-8">
     <title>Certificate Information</title>
     <!--include css file styles.css-->
-    
+
     <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="/static/script/script_view_ca.js"></script>
 
 
 </head>
@@ -33,50 +34,7 @@
         </thead>
 
         <tbody>
-
-            {{range .}}
-            <tr>
-
-                <td id="subject_cell">{{.Subject}}</td>
-                <td>{{.Created}}</td>
-                <td>{{.Expire}}</td>
-                <td>{{.Status}}</td>
-
-                <td>
-
-                    <!-- Open a windows with a cert information -->
-
-                    <button class="btn view-cert-btn" data-public-key="{{.PublicKey}}"> View Certificate </button>
-                    <div class="overlay" id="overlay" onclick="closeModal()"></div>
-                    <div class="modal" id="modal">
-                        <p><strong>Public Key:</strong></p>
-                        <pre id="publicKeyText"></pre>
-                        <button class="btn" onclick="copyCert()">Copy Certificate</button>
-                    </div>
-
-                    <!-- button -->
-
-                    <button class="btn btn-primary" onclick="viewKey(this)">View Key</button>
-                    <script>
-
-                    </script>
-
-                    <!-- Modal -->
-                    <div id="modalViewKey" class="modal">
-                        <div class="modal-content">
-                            <span class="close">&times;</span>
-                            <p id="key_content"></p>
-                            <button class="btn" onclick="copyKey()">Copy Key</button>
-                        </div>
-                    </div>
-
-                    <button class="btn-red revoke-btn" data-subject="{{.Subject}}">Revoke Certificate</button>
-                </td>
-            </tr>
-            {{end}}
-
-
-            <!-- Add more rows as needed -->
+            <!-- The table rows will be populated by JavaScript -->
         </tbody>
     </table>
     <!-- include button to back to /-->
@@ -84,11 +42,11 @@
         <button class="btn" onclick="window.location.href='/'">Home</button>
     </div>
 
-<script src="/static/script/script_view_ca.js"></script>
+    
 </body>
 
 <footer>
-    <p>&copy; 2025 EnterpriteCA  - V.0.0.1</p>
+    <p>&copy; 2025 EnterpriteCA - V.0.0.2</p>
 </footer>
 
 </html>
