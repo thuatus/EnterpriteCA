@@ -680,7 +680,7 @@ func ViewCertificateForm(c *gin.Context) error {
 	}
 
 	// Return the certificates as a JSON response.
-	c.JSON(http.StatusOK, certs)
+	c.JSON(http.StatusOK, gin.H{"certificates": certs})
 
 	return nil
 }

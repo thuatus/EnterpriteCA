@@ -1,5 +1,8 @@
 // This script is for the search functionality
 document.addEventListener('DOMContentLoaded', function () {
+        // load certificates when the page loads
+    loadCertificates();
+
     const searchInput = document.getElementById('searchInput');
     const table = document.getElementById('certTable').getElementsByTagName('tbody')[0];
 
@@ -34,12 +37,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 certs.forEach(cert => {
                     const row = document.createElement("tr");
                     row.innerHTML = `
-                    <td id="subject_cell">${cert.Subject}</td>
-                    <td>${cert.Created}</td>
-                    <td>${cert.Expire}</td>
-                    <td>${cert.Status}</td>
+                    <td id="subject_cell">${cert.subject}</td>
+                    <td>${cert.created}</td>
+                    <td>${cert.expire}</td>
+                    <td>${cert.status}</td>
                     <td>
-                        <button class="btn view-cert-btn" data-public-key="${cert.PublicKey}">View Certificate</button>
+                        <button class="btn view-cert-btn" data-public-key="${cert.public_key}">View Certificate</button>
                         <div class="overlay" id="overlay" onclick="closeModal()"></div>
                         <div class="modal" id="modal">
                             <p><strong>Public Key:</strong></p>
@@ -150,6 +153,5 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // load certificates when the page loads
-    document.addEventListener("DOMContentLoaded", loadCertificates);
+
 });
