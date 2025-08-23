@@ -731,13 +731,8 @@ func ViewServerPrivateKey(w http.ResponseWriter, r *http.Request) (string, error
 }
 
 // Handle CErtificate Revocation Request
-func HandleRevokeCertificate(w http.ResponseWriter, r *http.Request) {
+func HandleRevokeCertificate(w http.ResponseWriter, r *http.Request) error {
 	// Handle the certificate revocation request
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		log.Println("Method not allowed for revoking certificate")
-		return
-	}
 
 	// Extract the certificate subject from the form
 	var requestData map[string]string
@@ -745,28 +740,28 @@ func HandleRevokeCertificate(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Error on process request", http.StatusBadRequest)
 		log.Println("Error decoding request body:", err)
-		return
+		return err
 	}
 
 	subject := requestData["subject"]
 	if subject == "" {
 		http.Error(w, "Subject cant be empty", http.StatusBadRequest)
 		log.Println("Subject is empty in the request data")
-		return
+		return err
 	}
 
 	serverName, err := ca.GetServerNameFromCert(subject)
 	if err != nil {
 		log.Println("Error getting server name from certificate:", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+		return err
 	}
 
 	err = ca.RevokeServerCertificate(serverName)
 	if err != nil {
 		log.Println("Error revoking certificate:", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+		return err
 	}
 
 	log.Println("Certificate revoked successfully for subject:", subject)
@@ -775,14 +770,17 @@ func HandleRevokeCertificate(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("Error updating valid certificate in database:", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+		return err
 	}
 
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintln(w, "Certificate revoked successfully")
+	/*
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintln(w, "Certificate revoked successfully")
 
-	log.Println("Certificate revoked successfully for subject:", subject)
-	http.Redirect(w, r, "/view_cert/", http.StatusSeeOther)
+		log.Println("Certificate revoked successfully for subject:", subject)
+		http.Redirect(w, r, "/view_cert/", http.StatusSeeOther)
+	*/
+	return nil
 }
 
 // main function to start the web server
@@ -937,6 +935,19 @@ func main() {
 		serverKeyObj := ServerKey{ServerKey: serverkey}
 		c.JSON(http.StatusOK, serverKeyObj)
 
+	})
+
+	r.POST("/revoke_cert/", func(c *gin.Context) {
+		// Handle the certificate revocation request
+		err := HandleRevokeCertificate(c.Writer, c.Request)
+		if err != nil {
+			log.Println("Error handling certificate revocation request:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"message": "Certificate revoked successfully"})
+		log.Println("Certificate revoked successfully, redirecting to main page")
+		c.Redirect(http.StatusSeeOther, "/view_cert/")
 	})
 
 	r.Run(":8080")
