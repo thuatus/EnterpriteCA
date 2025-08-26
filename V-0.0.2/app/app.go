@@ -77,8 +77,10 @@ var (
 	store      = sessions.NewCookieStore(key)
 	rootCAPath = "/home/alvaro/srv/CA"
 	//rootCAPath = "/srv/CA"
-	appCertPath = "/srv/ssl/app.crt"
-	appKeyPath  = "/srv/ssl/app.key"
+	appCertPath = "/home/alvaro/srv/ssl/app.crt"
+	appKeyPath  = "/home/alvaro/srv/ssl/app.key"
+	//appCertPath = "/srv/ssl/app.crt"
+	//appKeyPath  = "/srv/ssl/app.key"
 )
 
 // Logging logs all requests with its path and the time it took to process
@@ -950,7 +952,8 @@ func main() {
 		c.Redirect(http.StatusSeeOther, "/view_cert/")
 	})
 
-	r.Run(":8080")
+	// Start the server on port 8443 with TLS and ssl
+	r.RunTLS(":8443", appCertPath, appKeyPath)
 
 }
 
