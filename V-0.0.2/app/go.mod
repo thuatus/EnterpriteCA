@@ -17,6 +17,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/thuatus/EnterpriteCA/V-0.0.2/ca v0.0.0-00010101000000-000000000000
 	github.com/thuatus/EnterpriteCA/V-0.0.2/db v0.0.0-00010101000000-000000000000
+	github.com/thuatus/EnterpriteCA/V-0.0.2/user v0.0.0-00010101000000-000000000000
 	golang.org/x/crypto v0.40.0
 )
 
@@ -52,3 +53,5 @@ require (
 	google.golang.org/protobuf v1.34.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/thuatus/EnterpriteCA/V-0.0.2/user => ../user

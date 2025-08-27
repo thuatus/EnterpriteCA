@@ -57,6 +57,25 @@ func ConnectDB() (*sql.DB, error) {
 
 }
 
+// UserExists checks if a user exists in the database
+func UserExists(username string) bool {
+
+	dbConn, err := ConnectDB()
+	if err != nil {
+		log.Println("Database connection is not established")
+		return false
+	}
+
+	var exists bool
+	query := "SELECT EXISTS(SELECT 1 FROM ca.users WHERE name = ?)"
+	err = dbConn.QueryRow(query, username).Scan(&exists)
+	if err != nil {
+		log.Println("Error checking user existence:", err)
+		return false
+	}
+	return exists
+}
+
 // Add user to the database
 func AddUser(username, password string) error {
 	log.Println("Conecting to the database...")

@@ -37,6 +37,7 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/thuatus/EnterpriteCA/V-0.0.2/ca"
 	"github.com/thuatus/EnterpriteCA/V-0.0.2/db"
+	"github.com/thuatus/EnterpriteCA/V-0.0.2/user"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -240,26 +241,19 @@ func handleAdminUser(w http.ResponseWriter, r *http.Request) error {
 
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		log.Println("Error hashing password:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return err
+	u := &user.User{
+		Username: username,
+		Role:     "admin",
+		Enabled:  true,
 	}
-
-	// Create the admin user
-	err = db.AddUser(username, string(hash))
+	err := u.SaveUser(password)
 	if err != nil {
-		log.Println("Error creating admin user:", err)
+		log.Println("Error saving admin user:", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return err
-
 	}
-
-	log.Println("Admin user created successfully")
-	//http.Redirect(w, r, "/", http.StatusSeeOther)
 
 	return nil
+
 }
 
 // Handle Login request
