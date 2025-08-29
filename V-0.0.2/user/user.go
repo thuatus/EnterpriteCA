@@ -3,18 +3,20 @@ package user
 import (
 	"log"
 
+	"github.com/pquerna/otp/totp"
 	"github.com/thuatus/EnterpriteCA/V-0.0.2/db"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
-	Username   string
-	Password   string
-	Email      string
-	Enabled    bool
-	Role       string // e.g., "admin" or "user"
-	mfaSecret  string
-	mfaEnabled bool
+	Username     string
+	Password     string
+	Email        string
+	Enabled      bool
+	Role         string // e.g., "admin" or "user"
+	MfaSecret    string
+	MfaEnabled   bool
+	MFAQRCodeURL string
 }
 
 // verifies if the user exists in the database
@@ -65,15 +67,33 @@ func (u *User) IsMFAEnabled() bool {
 	err = dbConn.QueryRow(query, u.Username).Scan(&mfaEnabled)
 	if err != nil {
 		log.Println("Error checking MFA status:", err)
-		u.mfaEnabled = false
+		u.MfaEnabled = false
 		return false
 	}
-	u.mfaEnabled = mfaEnabled
-	return u.mfaEnabled
+	u.MfaEnabled = mfaEnabled
+	return u.MfaEnabled
+}
+
+// Generates the MFA secret for the user
+func (u *User) GenerateMFASecret() error {
+	// Placeholder for generating MFA secret
+	// In a real implementation, this would generate a secure random secret
+	key, err := totp.Generate(totp.GenerateOpts{
+		Issuer:      "EnterpriteCA",
+		AccountName: u.Username,
+	})
+	if err != nil {
+		log.Println("Error generating MFA secret:", err)
+		return err
+	}
+	u.MfaSecret = key.Secret()
+	u.MFAQRCodeURL = key.URL()
+	return nil
+
 }
 
 // enables MFA for the user
 func (u *User) EnableMFA(secret string) {
-	u.mfaSecret = secret
-	u.mfaEnabled = true
+	u.MfaSecret = secret
+	u.MfaEnabled = true
 }
