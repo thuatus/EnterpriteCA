@@ -15,7 +15,8 @@ var serverName = "test-server-" + strDate + ".com"
 
 func TestGenerateCSR(t *testing.T) {
 	//serverName := "test-server.com"
-	csrPath, err := GenerateCSR(serverName)
+	rootCAPath := "~/srv/CA/"
+	csrPath, err := GenerateCSR(serverName, rootCAPath)
 	assert.NoError(t, err, "GenerateCSR should not return an error")
 	assert.FileExists(t, csrPath, "CSR file should be created")
 	// Clean up
@@ -24,7 +25,9 @@ func TestGenerateCSR(t *testing.T) {
 
 func TestIssueServerCertificate(t *testing.T) {
 	//serverName := "test-server.com"
-	csrPath, err := GenerateCSR(serverName)
+	rootCAPath := "~/srv/CA/"
+	csrPath, err := GenerateCSR(serverName, rootCAPath)
+
 	assert.NoError(t, err, "GenerateCSR should not return an error")
 	defer os.Remove(csrPath)
 

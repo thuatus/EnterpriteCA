@@ -1,6 +1,10 @@
 package user
 
 import (
+	"bytes"
+	"encoding/base64"
+	"html/template"
+	"image/png"
 	"log"
 
 	"github.com/pquerna/otp/totp"
@@ -9,14 +13,14 @@ import (
 )
 
 type User struct {
-	Username     string
-	Password     string
-	Email        string
-	Enabled      bool
-	Role         string // e.g., "admin" or "user"
-	MfaSecret    string
-	MfaEnabled   bool
-	MFAQRCodeURL string
+	Username   string
+	Password   string
+	Email      string
+	Enabled    bool
+	Role       string // e.g., "admin" or "user"
+	MfaSecret  string
+	MfaEnabled bool
+	MfaQrImg   template.URL
 }
 
 // verifies if the user exists in the database
@@ -87,7 +91,18 @@ func (u *User) GenerateMFASecret() error {
 		return err
 	}
 	u.MfaSecret = key.Secret()
-	u.MFAQRCodeURL = key.URL()
+	img, _ := key.Image(200, 200)
+
+	// Convert image to base64
+	buf := new(bytes.Buffer)
+	if err := png.Encode(buf, img); err != nil {
+		log.Println("Error encoding image to PNG:", err)
+		return err
+	}
+	encodedImg := base64.StdEncoding.EncodeToString(buf.Bytes())
+	u.MfaQrImg = template.URL("data:image/png;base64," + encodedImg)
+	log.Printf("MFA QR Code generated successfully : %s", u.MfaQrImg)
+
 	return nil
 
 }

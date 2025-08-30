@@ -779,23 +779,18 @@ func HandleRevokeCertificate(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-
 // Handle MFA configuration request
 func HandleMfaConfig(w http.ResponseWriter, r *http.Request) error {
 	// Serve the MFA configuration page
-	User = &user.User{
-		Username: r.FormValue("username"),
-		Role:     "admin",
-		Enabled:  true,
-	    MfaEnabled: false,
+	User := &user.User{
+		Username:   "admin",
+		Role:       "admin",
+		Enabled:    true,
+		MfaEnabled: false,
 		MfaSecret:  "",
-		GetMFAQRCodeURL: "",
-    }
-	err := User.IsMFAEnabled()
-	if err != nil {
-		log.Println("Error checking MFA status:", err)
-		return err
+		MfaQrImg:   "",
 	}
+	User.IsMFAEnabled()
 
 	if !User.MfaEnabled {
 		// Generate a new MFA secret
@@ -805,17 +800,26 @@ func HandleMfaConfig(w http.ResponseWriter, r *http.Request) error {
 			return err
 		}
 
-	// serve template with QR code win the MFA secret
-		template, err := template.ParseFiles("templates/frm_mfa_setup.html",w,User)
-	if err != nil {
-		log.Println("Error parsing template:", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return err
-	}
+		// serve template with QR code win the MFA secret
 
-	
-	
+		template, err := template.ParseFiles("templates/frm_mfa_config.html")
+		if err != nil {
+			log.Println("Error parsing template:", err)
+			return err
+		}
+
+		err = template.Execute(w, User)
+		if err != nil {
+			log.Println("Error executing template:", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return err
+		}
+		log.Println("Serving MFA configuration page with QR code")
+	}
+	return nil
+
 }
+
 // main function to start the web server
 // v0.0.2 Use gin framework to handle the web server
 func main() {
@@ -990,7 +994,7 @@ func main() {
 			log.Println("Error handling MFA configuration request:", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
 			return
-		}	
+		}
 
 		log.Println("Serving MFA configuration page")
 	})
