@@ -111,4 +111,28 @@ func (u *User) GenerateMFASecret() error {
 func (u *User) EnableMFA(secret string) {
 	u.MfaSecret = secret
 	u.MfaEnabled = true
+
+	dbConn, err := db.ConnectDB()
+	if err != nil {
+		log.Println("Database connection is not established")
+		return
+	}
+	defer dbConn.Close()
+
+	query := "UPDATE ca.users SET mfaUserKey = ?, mfaEnabled = ? WHERE name = ?"
+	_, err = dbConn.Exec(query, u.MfaSecret, u.MfaEnabled, u.Username)
+	if err != nil {
+		log.Println("Error enabling MFA:", err)
+		return
+	}
+	log.Println("MFA enabled successfully for user:", u.Username)
+
+}
+
+func (u *User) FirstValidateMFAToken(token string, secret string) bool {
+	valid := totp.Validate(token, secret)
+	if valid {
+		u.EnableMFA(u.MfaSecret)
+	}
+	return valid
 }

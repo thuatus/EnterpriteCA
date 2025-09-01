@@ -999,6 +999,34 @@ func main() {
 		log.Println("Serving MFA configuration page")
 	})
 
+	r.POST("/first_validate_mfa", func(c *gin.Context) {
+		// Handle the MFA token validation request
+		var requestData map[string]string
+		err := json.NewDecoder(c.Request.Body).Decode(&requestData)
+		if err != nil {
+			http.Error(c.Writer, "Error on process request", http.StatusBadRequest)
+			log.Println("Error decoding request body:", err)
+			return
+		}
+
+		username := requestData["username"]
+		token := requestData["mfacode"]
+		secret := requestData["mfaSecret"]
+
+		user := &user.User{
+			Username: username,
+		}
+
+		tokenValidated := user.FirstValidateMFAToken(token, secret)
+		if !tokenValidated {
+			log.Println("Error validating MFA token:", err)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid MFA token"})
+			return
+		}
+
+		log.Println("MFA token validated successfully for user:", username)
+		c.JSON(http.StatusOK, gin.H{"message": "MFA token validated successfully"})
+	})
 	// Start the server on port 8443 with TLS and ssl
 	r.RunTLS(":8443", appCertPath, appKeyPath)
 

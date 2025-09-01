@@ -1,11 +1,18 @@
 function validateMFAToken() {
 
-    fetch('/validate_mfa_token', {
+    fetch('/first_validate_mfa', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ token: document.getElementById('mfa_token').value })
+
+        // send form data
+        body: JSON.stringify({
+            username: document.getElementById('username').value,
+            mfaSecret: document.getElementById('mfaSecret').value,
+            mfaCode: document.getElementById('mfaCode').value
+        })
+        
     })
         .then(response => response.json())
         .then(data => {
