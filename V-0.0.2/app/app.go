@@ -816,6 +816,7 @@ func HandleMfaConfig(w http.ResponseWriter, r *http.Request) error {
 		}
 		log.Println("Serving MFA configuration page with QR code")
 	}
+	log.Println("MFA is already enabled for user:", User.Username)
 	return nil
 
 }
@@ -1010,22 +1011,26 @@ func main() {
 		}
 
 		username := requestData["username"]
-		token := requestData["mfacode"]
+		token := requestData["mfaCode"]
 		secret := requestData["mfaSecret"]
-
+		log.Println("MFA token:", token)
 		user := &user.User{
-			Username: username,
+			Username:  username,
+			Role:      "admin",
+			Enabled:   true,
+			MfaSecret: secret,
 		}
 
-		tokenValidated := user.FirstValidateMFAToken(token, secret)
+		tokenValidated := user.FirstValidateMFAToken(token)
+
 		if !tokenValidated {
-			log.Println("Error validating MFA token:", err)
+			log.Println("Error validating MFA token:", tokenValidated)
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid MFA token"})
 			return
 		}
 
 		log.Println("MFA token validated successfully for user:", username)
-		c.JSON(http.StatusOK, gin.H{"message": "MFA token validated successfully"})
+		c.JSON(http.StatusOK, gin.H{"success": true})
 	})
 	// Start the server on port 8443 with TLS and ssl
 	r.RunTLS(":8443", appCertPath, appKeyPath)

@@ -101,7 +101,7 @@ func (u *User) GenerateMFASecret() error {
 	}
 	encodedImg := base64.StdEncoding.EncodeToString(buf.Bytes())
 	u.MfaQrImg = template.URL("data:image/png;base64," + encodedImg)
-	log.Printf("MFA QR Code generated successfully : %s", u.MfaQrImg)
+	log.Printf("MFA QR Code generated successfully")
 
 	return nil
 
@@ -129,7 +129,12 @@ func (u *User) EnableMFA(secret string) {
 
 }
 
-func (u *User) FirstValidateMFAToken(token string, secret string) bool {
+func (u *User) FirstValidateMFAToken(token string) bool {
+	secret := u.MfaSecret
+	log.Println("Validating MFA token for user:", u.Username)
+	log.Println("Using secret:", secret)
+	log.Println("Provided token:", token)
+	// Validate the token using the stored secret
 	valid := totp.Validate(token, secret)
 	if valid {
 		u.EnableMFA(u.MfaSecret)
