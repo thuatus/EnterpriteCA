@@ -914,8 +914,8 @@ func main() {
 	r.POST("/authUser/", func(c *gin.Context) {
 		// Authenticate the user
 		authenticateUser(c.Writer, c.Request)
-		log.Println("User authenticated successfully, redirecting to main page")
-		c.Redirect(http.StatusSeeOther, "/")
+		log.Println("User password correct, redirecting to MFA checking page")
+		c.File("./static/otp_check.html")
 	})
 
 	r.GET("/issue_cert/", func(c *gin.Context) {
