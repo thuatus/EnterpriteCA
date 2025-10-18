@@ -141,3 +141,36 @@ func (u *User) FirstValidateMFAToken(token string) bool {
 	}
 	return valid
 }
+
+// Get secret for the user in db
+func GetMfaSecret(username string) (string, error) {
+	dbConn, err := db.ConnectDB()
+	if err != nil {
+		log.Println("Database connection is not established")
+		return "", err
+	}
+	defer dbConn.Close()
+	var mfaSecret string
+	query := "SELECT mfaUserKey FROM ca.users WHERE name = ?"
+	err = dbConn.QueryRow(query, username).Scan(&mfaSecret)
+	if err != nil {
+		log.Println("Error retrieving MFA secret:", err)
+		return "", err
+	}
+	return mfaSecret, nil
+}
+
+// validates the MFA token for the user
+func (u *User) ValidateMFAOtp(token string) bool {
+	secret, err := GetMfaSecret(u.Username)
+	if err != nil {
+		log.Println("Error retrieving MFA secret:", err)
+		return false
+	}
+	log.Println("Validating MFA token for user:", u.Username)
+	log.Println("Using secret:", secret)
+	log.Println("Provided token:", token)
+	// Validate the token using the stored secret
+	valid := totp.Validate(token, secret)
+	return valid
+}

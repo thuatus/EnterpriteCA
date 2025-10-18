@@ -84,6 +84,8 @@ var (
 	//appKeyPath  = "/srv/ssl/app.key"
 )
 
+var loggedUsers = make(map[string]user.User)
+
 // Logging logs all requests with its path and the time it took to process
 func Logging() Middleware {
 
@@ -334,7 +336,7 @@ func authenticateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("User %s authenticated successfully", username)
-
+	//creta a map
 	// Create a new session based on JWT
 	bytes := make([]byte, 16)
 	_, err = rand.Read(bytes) // Fill the slice with cryptographically secure random bytes
@@ -821,6 +823,19 @@ func HandleMfaConfig(w http.ResponseWriter, r *http.Request) error {
 
 }
 
+// Validades the MFA token provided by the user
+func Validate(w http.ResponseWriter, r *http.Request) error {
+	// Validate the MFA token provided by the user
+	token := r.FormValue("mfa_token")
+	if token == "" {
+		http.Error(w, "MFA token is required", http.StatusBadRequest)
+		log.Println("MFA token is required")
+		return fmt.Errorf("MFA token is required")
+	}
+
+	return nil
+}
+
 // main function to start the web server
 // v0.0.2 Use gin framework to handle the web server
 func main() {
@@ -1031,6 +1046,18 @@ func main() {
 
 		log.Println("MFA token validated successfully for user:", username)
 		c.JSON(http.StatusOK, gin.H{"success": true})
+	})
+
+	r.POST("/verifyotp", func(c *gin.Context) {
+		err := ValidateOtp(c.Writer, c.Request)
+		if err != nil {
+			log.Println("Error verifying MFA token:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
+			return
+		}
+		log.Println("MFA token verified successfully, redirecting to main page")
+		c.Redirect(http.StatusSeeOther, "/")
+
 	})
 	// Start the server on port 8443 with TLS and ssl
 	r.RunTLS(":8443", appCertPath, appKeyPath)
