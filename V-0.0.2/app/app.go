@@ -84,8 +84,6 @@ var (
 	//appKeyPath  = "/srv/ssl/app.key"
 )
 
-var loggedUsers = make(map[string]user.User)
-
 // Logging logs all requests with its path and the time it took to process
 func Logging() Middleware {
 
@@ -348,6 +346,7 @@ func authenticateUser(w http.ResponseWriter, r *http.Request) {
 	claims := jwt.MapClaims{
 		"UUID":          hex.EncodeToString(bytes), // Generate a UUID for the user session
 		"Authenticated": true,
+		"Username":      username,
 		"LoginTime":     time.Now().Format(time.RFC3339),
 		"UserAgent":     r.UserAgent(),
 		"Secure":        false, // Set to true if using HTTPS
@@ -371,6 +370,7 @@ func authenticateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	session.Values["Auth_Token"] = tokenString // Store the JWT in the session
 	session.Values["Authenticated"] = true
+	session.Values["Username"] = username
 	session.Values["LoginTime"] = time.Now().Format(time.RFC3339)
 	session.Values["UserAgent"] = r.UserAgent()
 	session.Values["Secure"] = false // Set to true if using HTTPS
@@ -824,13 +824,42 @@ func HandleMfaConfig(w http.ResponseWriter, r *http.Request) error {
 }
 
 // Validades the MFA token provided by the user
-func Validate(w http.ResponseWriter, r *http.Request) error {
+func ValidateOtp(w http.ResponseWriter, r *http.Request) error {
 	// Validate the MFA token provided by the user
 	token := r.FormValue("mfa_token")
 	if token == "" {
 		http.Error(w, "MFA token is required", http.StatusBadRequest)
 		log.Println("MFA token is required")
 		return fmt.Errorf("MFA token is required")
+	}
+
+	//Get the jwt session to get the username
+	session, err := store.Get(r, "session-token")
+	if err != nil {
+		log.Println("Error getting session:", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return err
+	}
+
+	username, ok := session.Values["Username"].(string)
+	if !ok || username == "" {
+		log.Println("No username found in session")
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return fmt.Errorf("No username found in session")
+	}
+
+	User := &user.User{
+		Username: username,
+	}
+
+	// Validate the MFA token
+	valid := User.ValidateMFAOtp(token)
+	if !valid {
+		http.Error(w, "Invalid MFA token", http.StatusUnauthorized)
+		log.Println("Invalid MFA token for user:", username)
+		return fmt.Errorf("invalid mfa token")
+		// clean up jwt session
+
 	}
 
 	return nil
