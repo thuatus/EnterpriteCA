@@ -826,7 +826,7 @@ func HandleMfaConfig(w http.ResponseWriter, r *http.Request) error {
 // Validades the MFA token provided by the user
 func ValidateOtp(w http.ResponseWriter, r *http.Request) error {
 	// Validate the MFA token provided by the user
-	token := r.FormValue("mfa_token")
+	token := r.FormValue("otp")
 	if token == "" {
 		http.Error(w, "MFA token is required", http.StatusBadRequest)
 		log.Println("MFA token is required")
@@ -857,8 +857,14 @@ func ValidateOtp(w http.ResponseWriter, r *http.Request) error {
 	if !valid {
 		http.Error(w, "Invalid MFA token", http.StatusUnauthorized)
 		log.Println("Invalid MFA token for user:", username)
-		return fmt.Errorf("invalid mfa token")
 		// clean up jwt session
+		session.Options.MaxAge = -1
+		err = session.Save(r, w)
+		if err != nil {
+			log.Println("Error saving session:", err)
+			return err
+		}
+		return fmt.Errorf("invalid mfa token")
 
 	}
 
@@ -959,7 +965,13 @@ func main() {
 		// Authenticate the user
 		authenticateUser(c.Writer, c.Request)
 		log.Println("User password correct, redirecting to MFA checking page")
+		c.Redirect(http.StatusSeeOther, "/frmCheckOtp/")
+	})
+
+	r.GET("/frmCheckOtp/", func(c *gin.Context) {
+		// Serve the MFA token checking form
 		c.File("./static/otp_check.html")
+		log.Println("Serving MFA token checking form")
 	})
 
 	r.GET("/issue_cert/", func(c *gin.Context) {
