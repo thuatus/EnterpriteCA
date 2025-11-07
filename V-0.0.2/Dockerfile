@@ -6,8 +6,8 @@ COPY . ./V-0.0.2/
 WORKDIR /build/V-0.0.2/app
 RUN go build -o /app/enterpriteca
 
-# Final image  updated to use Alpine 3.23.6
-FROM alpine:3.23.6
+# Final image  updated to use Alpine 3.23.2
+FROM alpine:3.23.2
 
 RUN apk add --no-cache ca-certificates openssl
 WORKDIR /srv/app
