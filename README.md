@@ -8,7 +8,7 @@ The purpose of this project is to learn Go and apply that knowledge in a real-wo
 
 **v0.0.1** – Initial version with the basic implementation of a Certificate Authority, a database, and a web application for development and learning purposes.
 
-**v0.0.2 - *
+**v0.0.2** - New features and bug fixes - acf0b9872407b46b66f146e0b181edb78d958924
 
 ## Features
 
@@ -17,13 +17,14 @@ The purpose of this project is to learn Go and apply that knowledge in a real-wo
 - Support for X.509 certificates
 - Secure storage of private keys
 - Web interface for CA interaction
+- 2FA OTP Authentication
 
 ## Getting Started
 
 1. Clone the repository and navigate to the images folder.
    ```bash
    git clone https://github.com/yourusername/EnterpriteCA.git
-   cd EnterpriteCA/V-0.0.1/images/CA
+   cd EnterpriteCA/V-0.0.2/images/CA
    ```
 2. Set the environment variables in `.env` file
    ```bash
