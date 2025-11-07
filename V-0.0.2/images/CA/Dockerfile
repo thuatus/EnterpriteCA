@@ -1,5 +1,5 @@
 # Build stage 
-#- img version uptaded to use Go 1.25.6
+#- img version uptaded to use Go 1.25.3
 FROM golang:1.25.3 AS builder 
 WORKDIR /build
 COPY . ./V-0.0.2/
