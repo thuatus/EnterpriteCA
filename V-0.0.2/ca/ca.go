@@ -34,8 +34,8 @@ type CertInfo struct {
 }
 
 var (
-	rootCAPath string = "/home/alvaro/srv/CA/"
-	//rootCAPath string = "/srv/CA"
+	//rootCAPath string = "<path for dev purposes>"
+	rootCAPath string = "/srv/CA"
 )
 
 // Creates folders and files structure
@@ -687,51 +687,3 @@ func GetCRLInfo() (string, error) {
 
 	return string(crlContent), nil
 }
-
-/*
-// main to validade
-func main() {
-	caName := "CA-01"
-
-	fmt.Printf("Creating CA ...\n")
-	caPathName, intermediateCaPathName, err := createPKIFolders(caName)
-	if err != nil {
-		log.Fatalf("Error creating CA Folders: %v", err)
-	}
-	log.Printf("Folder structure created!\nCA path: %s \n IntermediateCAPAth: %s\n", caPathName, intermediateCaPathName)
-
-	fmt.Printf("Creating CA config files ...\n")
-	country := "BR"
-	state := "Distrito Federal"
-	local := "Brasilia"
-	organization := "CA-01"
-	organizationalUnit := "Authority"
-
-	createConfigFiles(caPathName, country, state, local, organization, organizationalUnit)
-	if err != nil {
-		log.Fatalf("Error creating CA config files: %v", err)
-	}
-	log.Printf("CA config files created!\n")
-
-	fmt.Printf("Creating CA certificate ...\n")
-	cacertificate, err := createCACertificate(caPathName)
-
-	if err != nil {
-		log.Fatalf("Error creating CA certificate: %v", err)
-	}
-	log.Printf("CA certificate created! %s\n", cacertificate)
-
-	fmt.Printf("Creating Server certificate ...\n")
-	reqFile, err := os.Open("/home/alvaro/app01.csr")
-	if err != nil {
-		log.Fatalf("Error opening CSR file: %v", err)
-	}
-	defer reqFile.Close()
-	serverCert, err := issueServerCertificate("app01", reqFile)
-	if err != nil {
-		log.Fatalf("Error creating server certificate: %v", err)
-	}
-	log.Printf("Server certificate created! %s\n", serverCert)
-
-}
-*/

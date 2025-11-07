@@ -74,14 +74,14 @@ type Certificate struct {
 }
 
 var (
-	key        = []byte("super-secret-key")
-	store      = sessions.NewCookieStore(key)
-	rootCAPath = "/home/alvaro/srv/CA"
-	//rootCAPath = "/srv/CA"
-	appCertPath = "/home/alvaro/srv/ssl/app.crt"
-	appKeyPath  = "/home/alvaro/srv/ssl/app.key"
-	//appCertPath = "/srv/ssl/app.crt"
-	//appKeyPath  = "/srv/ssl/app.key"
+	key   = []byte("super-secret-key")
+	store = sessions.NewCookieStore(key)
+	//rootCAPath = "<path for dev purposes>"
+	rootCAPath = "/srv/CA"
+	//appCertPath = "<path for dev purposes>"
+	//appKeyPath  = "<path for dev purposes>"
+	appCertPath = "/srv/ssl/app.crt"
+	appKeyPath  = "/srv/ssl/app.key"
 )
 
 // Logging logs all requests with its path and the time it took to process
