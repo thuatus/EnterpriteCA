@@ -1,12 +1,13 @@
-# Build stage
-FROM golang:1.24.2-alpine AS builder
+# Build stage 
+#- img version uptaded to use Go 1.25.6
+FROM golang:1.25.6 AS builder 
 WORKDIR /build
-COPY . ./V-0.0.1/
-WORKDIR /build/V-0.0.1/app
+COPY . ./V-0.0.2/
+WORKDIR /build/V-0.0.2/app
 RUN go build -o /app/enterpriteca
 
-# Final image
-FROM alpine:3.22
+# Final image  updated to use Alpine 3.23.6
+FROM alpine:3.23.6
 
 RUN apk add --no-cache ca-certificates openssl
 WORKDIR /srv/app
