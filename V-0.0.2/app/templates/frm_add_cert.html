@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Issue Server Certificate</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="/static/script/script_app_add_cert.js"></script>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <!--
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        form { max-width: 600px; margin: auto; }
+        label { display: block; margin-top: 15px; }
+        input, textarea { width: 100%; padding: 8px; margin-top: 5px; }
+        button { margin-top: 20px; padding: 10px 20px; }
+    </style>
+-->
+</head>
+
+<header>
+    <h1>EnterpriteCA</h1>
+</header>
+
+<body>
+    <h2>Submit Certificate Signing and Issue Request</h2>
+
+    <br><br><br><br>
+    <form action="/add_server_cert/" method="POST">
+        <div style="display: flex; flex-direction: column; align-items: center;">
+            <label class="label-main" for="serverName">Server Name:</label>
+            <input type="text" id="serverName" name="serverName" placeholder="e.g. server.example.com" required>
+
+            <button class="btn" type="submit" onclick="return confirmSubmit()" style="margin-top: 10px;">Issue Server
+                Certificate</button>
+            <br><br><br>
+            <button class="btn" onclick="window.location.href='/'" style="margin-top: 10px;">Home</button>
+        </div>
+    </form>
+
+
+    <br><br>
+
+    <strong>Issuer: </strong> {{.Issuer}} <br>
+    <strong>CA Subject:</strong> {{.Subject}} <br>
+    <strong>Country:</strong> {{.Country}} <br>
+    <strong>State:</strong>{{.State}}<br>
+    <strong>Locality: </strong>{{.Locality}} <br>
+    <strong>Organization:</strong> {{.Organization}} <br>
+    <strong>Organizational Unit:</strong> {{.OrganizationalUnit}} <br>
+
+</body>
+<footer class="text-center text-muted mt-5 py-3 border-top">
+    <p class="mb-0">&copy; 2025 EnterpriteCA - V.0.0.1</p>
+</footer>
+
+
+</html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Certificate Information</title>
+    <!--include css file styles.css-->
+
+    <link rel="stylesheet" href="../static/css/styles.css">
+   <!-- <script src="/static/script/script_view_ca.js"></script>-->
+
+
+</head>
+<header>
+    <h1>EnterpriteCA</h1>
+</header>
+
+<body>
+    <h2>Certificate Information</h2>
+    <div class="search-box">
+        <label for="searchInput">Search:</label>
+        <input type="text" id="searchInput" placeholder="Type to search...">
+    </div>
+    <table id="certTable">
+        <thead>
+            <tr>
+                <!--   <th>Application</th> -->
+                <th>Subject</th>
+                <th>Issued Date</th>
+                <th>Expiry Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            <!-- The table rows will be populated by JavaScript -->
+        </tbody>
+    </table>
+    <!-- include button to back to /-->
+    <div align="center" style="margin-top: 20px;">
+        <button class="btn" onclick="window.location.href='/'">Home</button>
+    </div>
+
+<script src="/static/script/script_view_ca.js"></script> 
+</body>
+
+<footer>
+    <p>&copy; 2025 EnterpriteCA - V.0.0.2</p>
+</footer>
+
+</html>
