@@ -28,6 +28,7 @@ RUN mkdir -p /srv/ssl && \
 
 EXPOSE 8443
 
+RUN chmod +x ./enterpriteca
 CMD ["./enterpriteca"]
 
 
