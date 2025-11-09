@@ -2,7 +2,7 @@
 #- img version uptaded to use Go 1.25.3
 FROM golang:1.24.2 AS builder 
 WORKDIR /build
-COPY ../V-0.0.2 ./V-0.0.2/
+COPY ../V-0.0.2/ ./V-0.0.2/
 WORKDIR /build/V-0.0.2/app
 RUN go build -o /app/enterpriteca
 RUN ls -la /enterpriteca
