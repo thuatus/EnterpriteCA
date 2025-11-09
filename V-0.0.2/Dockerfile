@@ -5,6 +5,7 @@ WORKDIR /build
 COPY . ./V-0.0.2/ 
 WORKDIR /build/V-0.0.2/app
 RUN go build -o /app/enterpriteca
+RUN ls -la /enterpriteca
 
 # Final image  updated to use Alpine 3.22.2
 FROM alpine:3.22.2
