@@ -26,9 +26,11 @@ COPY db /srv/db
 RUN mkdir -p /srv/ssl && \
     openssl req -x509 -newkey rsa:4096 -keyout /srv/ssl/app.key -out /srv/ssl/app.crt -days 365 -nodes -subj "/CN=enterprise.app.com"
 
-EXPOSE 8443
 
 RUN chmod +x ./enterpriteca
+
+EXPOSE 8443
+
 CMD ["./enterpriteca"]
 
 
