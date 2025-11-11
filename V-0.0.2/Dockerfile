@@ -2,10 +2,18 @@
 #- img version uptaded to use Go 1.25.3
 FROM golang:1.24.2 AS builder 
 WORKDIR /build
-COPY ../V-0.0.2/ ./V-0.0.2/
+COPY . .
 WORKDIR /build/V-0.0.2/app
+
+# static compilation
+
+ENV CGO_ENABLED=0
+ENV GOOS=linux
+ENV GOARCH=amd64
+
+
 RUN go build -o /app/enterpriteca
-RUN ls -la /enterpriteca
+RUN ls -la /app/enterpriteca
 
 # Final image  updated to use Alpine 3.22.2
 FROM alpine:3.22.2
@@ -17,11 +25,11 @@ WORKDIR /srv/app
 COPY --from=builder /app/enterpriteca .
 
 # Copy static, templates, and other needed folders
-COPY app/static ./static
-COPY app/templates ./templates
-COPY app/index.html ./index.html
-COPY ca /srv/ca
-COPY db /srv/db
+COPY V-0.0.2/app/static ./static
+COPY V-0.0.2/app/templates ./templates
+COPY V-0.0.2/app/index.html ./index.html
+COPY V-0.0.2/ca /srv/ca
+COPY V-0.0.2/db /srv/db
 
 # (Optional) Generate SSL certs if needed
 RUN mkdir -p /srv/ssl && \
@@ -33,5 +41,3 @@ RUN chmod +x ./enterpriteca
 EXPOSE 8443
 
 CMD ["./enterpriteca"]
-
-

@@ -34,8 +34,8 @@ type CertInfo struct {
 }
 
 var (
-	//rootCAPath string = "<path for dev purposes>"
-	rootCAPath string = "/srv/CA"
+	rootCAPath string = "/srv//CA"
+	//rootCAPath string = "/srv/CA"
 )
 
 // Creates folders and files structure
@@ -376,9 +376,9 @@ func CreateCACertificate(caPathName string) (string, error) {
 
 	// concatenate the CA and Intermediate CA information
 	var appPathName string
-	indexappPatch := strings.Index(caPathName, "/srv")
+	indexappPatch := strings.Index(caPathName, "/srv/")
 	if indexappPatch != -1 {
-		appPathName = caPathName[:indexappPatch+len("/srv")]
+		appPathName = caPathName[:indexappPatch+len("/srv/")]
 	}
 
 	caChainFile := appPathName + "/app/static/ca-chain.pem"

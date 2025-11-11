@@ -787,7 +787,7 @@ func HandleMfaConfig(w http.ResponseWriter, r *http.Request) error {
 	User := &user.User{
 		Username:   "admin",
 		Role:       "admin",
-		Enabled:    true,
+		Enabled:    false,
 		MfaEnabled: false,
 		MfaSecret:  "",
 		MfaQrImg:   "",
@@ -947,8 +947,8 @@ func main() {
 			return
 		}
 		// Redirect to the main page
-		log.Println("Admin user created successfully, redirecting to main page")
-		c.Redirect(http.StatusSeeOther, "/")
+		log.Println("Admin user created successfully, redirecting to OTP first configuration page")
+		c.Redirect(http.StatusSeeOther, "/mfa_config/")
 
 	})
 
@@ -1054,6 +1054,7 @@ func main() {
 		}
 
 		log.Println("Serving MFA configuration page")
+
 	})
 
 	r.POST("/first_validate_mfa", func(c *gin.Context) {

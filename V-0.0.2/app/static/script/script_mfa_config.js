@@ -17,7 +17,7 @@ function validateMFAToken() {
     .then(data => {
         if (data.success) {
             alert('MFA token validated successfully!');
-            window.location.href = '/';
+            window.location.href = '/login/';
         } else {
             document.getElementById('error_message').textContent = 'Invalid token. Please try again.';
         }
