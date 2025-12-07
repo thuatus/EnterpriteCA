@@ -34,7 +34,7 @@ type CertInfo struct {
 }
 
 var (
-	rootCAPath string = "/srv//CA"
+	rootCAPath string = "/srv/CA"
 	//rootCAPath string = "/srv/CA"
 )
 
@@ -238,7 +238,7 @@ func CreateConfigFiles(caPath string, country string, state string, local string
 		return "", err
 	}
 
-	defFilePath := "../definitions.txt"
+	defFilePath := rootCAPath + "definitions.txt"
 	defFile, err := os.Create(defFilePath)
 	if err != nil {
 		log.Fatalf("Error creating definition file: %v", err)
@@ -356,7 +356,7 @@ func CreateCACertificate(caPathName string) (string, error) {
 		return "", err
 	}
 
-	//create intermediate certificate request
+	//create intermediate certificate request/srv
 	cmd = exec.Command("openssl", "req", "-key", intermediateCAKey, "-new", "-sha256", "-out", intermediateCARequest, "-config", caConfigFIle, "-batch")
 
 	intermediateCAReqinfo, err := cmd.Output()

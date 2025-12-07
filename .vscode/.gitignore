@@ -1,2 +1,3 @@
 # ignora arquivos do vcscode
 *.json
+*.vscode

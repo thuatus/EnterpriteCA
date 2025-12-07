@@ -41,8 +41,8 @@ func ConnectDB() (*sql.DB, error) {
 	}
 
 	cfg.Net = "tcp"
-	//cfg.Addr = "localhost:3306" // for local test propose
-	cfg.Addr = "db:3306" // for docker compose propose
+	cfg.Addr = "localhost:3306" // for local test propose
+	//cfg.Addr = "db:3306" // for docker compose propose
 	cfg.DBName = "ca"
 
 	//Cria o tratamento de erro de conexão do DB

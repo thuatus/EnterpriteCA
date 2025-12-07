@@ -898,16 +898,30 @@ func main() {
 	// Set up the routes
 	// check if the initial settings were made and handle the first login or main page
 	// Register middleware for "/" route only if initial settings are present
-	if checkInitialSettings() {
+	/* if checkInitialSettings() {
 		r.GET("/", checkSessionMiddleware(), func(c *gin.Context) {
 			c.File("index.html")
 			fmt.Println("Serving main page")
 		})
-	} else {
+	  } else {
 		r.GET("/", func(c *gin.Context) {
 			FormInitialSettings(c.Writer, c.Request)
 		})
-	}
+	 }
+	*/
+
+	r.GET("/", func(c *gin.Context) {
+		// Tests of initial settings was applied
+		if checkInitialSettings() {
+			// Serve the main page
+			c.File("index.html")
+			log.Println("Serving main page")
+		} else {
+			// Serve the initial settings form
+			FormInitialSettings(c.Writer, c.Request)
+			log.Println("Serving initial settings form")
+		}
+	}, checkSessionMiddleware())
 
 	// Serve static content
 	r.GET("/static/*filepath", func(c *gin.Context) {
@@ -1105,78 +1119,3 @@ func main() {
 	r.RunTLS(":8443", appCertPath, appKeyPath)
 
 }
-
-/*
-	// Create a new http.ServeMux
-	mux := http.NewServeMux()
-	// Register the logging middleware
-	mux.HandleFunc("/", ChainMiddleware(
-		func(w http.ResponseWriter, r *http.Request) {
-			fmt.Println("Initial settings found, serving main page")
-			http.ServeFile(w, r, "index.html")
-		},
-		Logging(),
-		checkSession(),
-		checkInitialSettingsMiddleware(),
-	))
-
-	// file Server to serve static files
-	mux.HandleFunc("/static/", Logging()(func(w http.ResponseWriter, r *http.Request) {
-
-		http.StripPrefix("/static", http.FileServer(http.Dir("./static"))).ServeHTTP(w, r)
-		fmt.Println("Serving static content")
-
-	}))
-
-	// Register the form for initial settings
-	mux.Handle("/save_init_cfg/", Logging()(ApplyInitialSettings))
-
-	// Register the form for creating the admin user
-	mux.Handle("/add_user/", Logging()(handleAdminUser))
-
-	// REgister the form for login
-	//*
-		mux.Handle("/login/", Logging()(func(w http.ResponseWriter, r *http.Request) {
-
-			// Serve the login form
-			http.ServeFile(w, r, "./static/login.html")
-
-		}))
-
-	//*
-	mux.Handle("/login/", (ChainMiddleware(LoginHandler, Logging(), checkInitialSettingsMiddleware())))
-
-	// Register the login handler
-	mux.Handle("/authUser/", Logging()(authenticateUser))
-
-	// Register the form for issuing certificates
-	mux.Handle("/issue_cert/", (ChainMiddleware(IssueCertHandler, Logging(), checkSession())))
-
-	mux.Handle("/add_server_cert/", (ChainMiddleware(CreateServerCert, Logging(), checkSession())))
-
-	// Register the form for viewing certificates
-	mux.Handle("/view_cert/", (ChainMiddleware(ViewCertificateForm, Logging(), checkSession())))
-
-	// Register the handler for viewing server private keys
-	mux.Handle("/view_server_key/", (ChainMiddleware(ViewServerPrivateKey, Logging(), checkSession())))
-
-	//Register the handler for revoking certificates
-	mux.Handle("/revoke_cert/", (ChainMiddleware(HandleRevokeCertificate, Logging(), checkSession())))
-
-	// Start the server
-	//*err := http.ListenAndServe(":8080", mux)
-	// Log the error if any
-	if err != nil {
-		log.Fatal("Failed to start HTTP Server: %v", err)
-	}
-	//*
-
-	err := http.ListenAndServeTLS(":8443", appCertPath, appKeyPath, mux)
-	if err != nil {
-		log.Fatalf("Failed to start HTTPS server: %v", err)
-	}
-
-	log.Println("Server started on 8443 with TLS enabled")
-	log.Println("Visit  https://localhost:8443 to access")
-}
-*/
