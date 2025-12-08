@@ -9,7 +9,9 @@ CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(45) NOT NULL,
     passwd CHAR(60) NOT NULL, -- store hashed passwords
-    active BOOLEAN DEFAULT TRUE
+    active BOOLEAN DEFAULT TRUE,
+    mfaEnabled tinyint(1) DEFAULT '0',
+    mfaUserKey varchar(60) DEFAULT NULL
 );
 
 CREATE TABLE IF NOT EXISTS ca (
