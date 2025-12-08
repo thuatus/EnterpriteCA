@@ -3,7 +3,7 @@
 FROM golang:1.24.2 AS builder 
 WORKDIR /build
 COPY . .
-WORKDIR /build/V-0.0.2/app
+WORKDIR /build/app
 
 # static compilation
 
@@ -25,11 +25,12 @@ WORKDIR /srv/app
 COPY --from=builder /app/enterpriteca .
 
 # Copy static, templates, and other needed folders
-COPY V-0.0.2/app/static ./static
-COPY V-0.0.2/app/templates ./templates
-COPY V-0.0.2/app/index.html ./index.html
-COPY V-0.0.2/ca /srv/ca
-COPY V-0.0.2/db /srv/db
+# Ensure these directories exist in your build context before building.
+COPY app/static ./static
+COPY app/templates ./templates
+COPY app/index.html ./index.html
+COPY ca /srv/ca
+COPY db /srv/db
 
 # (Optional) Generate SSL certs if needed
 RUN mkdir -p /srv/ssl && \
