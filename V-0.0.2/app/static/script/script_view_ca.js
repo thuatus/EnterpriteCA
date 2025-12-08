@@ -168,7 +168,7 @@ function revokeCert(subject) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subject })
     })
-        .then(response => {Close
+        .then(response => {
             if (response.ok) {
                 alert('Success on revoke certificate');
             } else {
